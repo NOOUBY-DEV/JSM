@@ -66,13 +66,16 @@ int main()
         // [PRINT HEX BYTES]
         {
 
-                int TO_PRINT_DATA_LINE = FALSE;
+                int WAITING_FOR_END = TRUE;
 
 
-                printf("\n\n┌┐ ┌─────────────────────┐ ┌─────────────────────┐\n");
+                printf("\n\n");
+                printf("IN           OPR1                   OPR2\n");
+                printf("┌┐ ┌─────────────────────┐ ┌─────────────────────┐\n");
 
 
-                for (size_t INDEX = 0; INDEX < BYTECODE_LENGTH; INDEX ++)
+
+                for (size_t INDEX = 0; INDEX < BYTECODE_LENGTH; INDEX++)
                 {
 
                         unsigned char CHAR = BYTECODE[INDEX];
@@ -98,28 +101,24 @@ int main()
                         if ((INDEX + 1) % 17 == 0)
                         {
 
-                                if (TO_PRINT_DATA_LINE)
+
+                                if ((BYTECODE[(INDEX + 1) - 17] == END) && WAITING_FOR_END)
                                 {
 
                                         printf("\033[0m\n──────────────────────────────────────────────────");
 
 
-                                        TO_PRINT_DATA_LINE = FALSE;
+                                        WAITING_FOR_END = FALSE;
 
                                 }
 
-                                if (BYTECODE[INDEX + 1] == END)
-                                {
-
-                                        TO_PRINT_DATA_LINE = TRUE;
-
-                                }
 
                                 printf("\n");
 
                         }
 
                 }
+
 
                 printf("\033[0m\n\n\n");
 

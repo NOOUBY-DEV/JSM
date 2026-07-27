@@ -408,7 +408,6 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
         }
 
 
-
         PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_LENGTH, BYTECODE, &JSMCODE_INDEX, &BYTECODE_INDEX);
 
 
@@ -429,7 +428,7 @@ void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_LENGTH, 
                 char CHAR = JSMCODE[(*JSMCODE_INDEX)];
 
 
-                if (CHAR == '\n')
+                if (CHAR == '\n' || CHAR == '\t')
                 {
 
                         continue;
@@ -526,7 +525,7 @@ void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_LENGTH, 
                                 {
 
 
-                                        for (unsigned char INDEX = (*JSMCODE_INDEX); JSMCODE[INDEX] >= 48 && JSMCODE[INDEX] <= 57; INDEX ++)
+                                        for (size_t INDEX = (*JSMCODE_INDEX); JSMCODE[INDEX] >= 48 && JSMCODE[INDEX] <= 57; INDEX ++)
                                         {
 
                                                 NUMBERED_ESCAPE_CODE_LENGTH ++;
