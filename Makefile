@@ -1,0 +1,18 @@
+C_FLAGS = -I./JSM -I./COMMON
+OUTPUT_FOLDER = NOOUBYS_OUTPUT
+JSM_SOURCE_FILES = $(shell find JSM -name "*.c")
+
+
+
+
+
+TEST_1_CFILE = TESTS/TEST1.c
+TEST_1: $(TEST_1_CFILE)
+	gcc -g $(JSM_SOURCE_FILES) $(TEST_1_CFILE) $(C_FLAGS) -o $(OUTPUT_FOLDER)/TEST_1
+
+
+
+
+RUN:
+	clear
+	./$(OUTPUT_FOLDER)/$(P)

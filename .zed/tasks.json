@@ -1,0 +1,10 @@
+[
+        {
+                "label": "OPEN LAZYGIT",
+
+                "command": "kitty",
+
+                "args": ["--directory", "$ZED_WORKTREE_ROOT", "lazygit & disown"]
+        },
+
+]
