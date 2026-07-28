@@ -1,4 +1,4 @@
-#include "../JSM/JSM.h"
+#include "../../JSM/JSM.h"
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +24,7 @@ int main()
         // [GET .jsm FILE AND COMPILE]
         {
 
-                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/Documents/JSM_TESTFILES/TEST1.jsm", &JSMCODE_LENGTH, &JSMCODE);
+                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TESTS/TEST1/TEST1.jsm", &JSMCODE_LENGTH, &JSMCODE);
 
 
                 if (OPEN_STATUS == 0)
@@ -108,7 +108,7 @@ int main()
                                         printf("\033[0m\n");
                                         printf("──────────────────────────────────────────────────\n");
                                         printf("//                  DATA BELOW                  //\n");
-                                        printf("──────────────────────────────────────────────────\n");
+                                        printf("──────────────────────────────────────────────────");
 
 
                                         WAITING_FOR_END = FALSE;
