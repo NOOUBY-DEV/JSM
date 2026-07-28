@@ -11,7 +11,7 @@
 
 
 
-#define REGISTER_COUNT 20
+#define REGISTER_COUNT 255
 
 
 #define TRUE 1
@@ -43,7 +43,6 @@ enum INTRUCTIONS_ENUM
         CMPLE,
         PUSH,
         POP,
-        LOADMODE,
         LOAD,
         SYSCALL,
 
@@ -54,8 +53,9 @@ enum REGISTERS_ENUM
 {
 
         RSP,
-        RBP,
+        RSB,
         RDP,
+        RDB,
         RLA,
         RLP,
         RRA,
@@ -97,7 +97,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE);
 
 
-int JSM__RUN(const char* CODE, const size_t STACK_SIZE_MB);
+int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB);
 
 
 

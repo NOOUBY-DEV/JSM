@@ -11,7 +11,7 @@ char* JSMCODE;
 char* BYTECODE;
 
 
-size_t JSMCODE_LENGTH, BYTECODE_LENGTH;
+size_t JSMCODE_LENGTH, BYTECODE_SIZE;
 
 
 
@@ -35,7 +35,7 @@ int main()
                 }
 
 
-                int SIZE_CHECK_STATUS = JSM__CHECK_BYTECODE_SIZE(JSMCODE, JSMCODE_LENGTH, &BYTECODE_LENGTH);
+                int SIZE_CHECK_STATUS = JSM__CHECK_BYTECODE_SIZE(JSMCODE, JSMCODE_LENGTH, &BYTECODE_SIZE);
 
 
                 if (SIZE_CHECK_STATUS == JSM_ERROR)
@@ -46,10 +46,10 @@ int main()
                 }
 
 
-                BYTECODE = malloc(BYTECODE_LENGTH);
+                BYTECODE = malloc(BYTECODE_SIZE);
 
 
-                int COMPILE_STATUS = JSM__COMPILE_TO_BYTECODE(JSMCODE, BYTECODE, JSMCODE_LENGTH, &BYTECODE_LENGTH);
+                int COMPILE_STATUS = JSM__COMPILE_TO_BYTECODE(JSMCODE, BYTECODE, JSMCODE_LENGTH, &BYTECODE_SIZE);
 
 
 
@@ -75,7 +75,7 @@ int main()
 
 
 
-                for (size_t INDEX = 0; INDEX < BYTECODE_LENGTH; INDEX++)
+                for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX++)
                 {
 
                         unsigned char CHAR = BYTECODE[INDEX];
@@ -129,7 +129,7 @@ int main()
 
 
 
-        //JSM__RUN(BYTECODE, 2);
+        JRM__RUN(BYTECODE, BYTECODE_SIZE, 2);
 
 
 

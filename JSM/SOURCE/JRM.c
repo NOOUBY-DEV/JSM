@@ -1,4 +1,6 @@
 #include "../JSM.h"
+#include <stddef.h>
+#include <stdio.h>
 
 
 
@@ -11,13 +13,15 @@
 
 unsigned long REGISTER_LIST[REGISTER_COUNT];
 
-char* STACK;
-
-char* DATA;
+char* MEMORY_SPACE;
 
 size_t JSM_CURRENT_SOC = 1;
 
 int IS_RUNTIME_ERROR = FALSE;
+
+int EXIT_REQUESTED = FALSE;
+
+int EXIT_CODE;
 
 int DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
 
@@ -59,16 +63,18 @@ void LOAD_INSTRUCTION();
 
 
 
-
 void CAST_OPERAND_TO_TYPE(unsigned long* OPERAND);
 
-void JSM_LOG_ERROR(const char* MESSAGE);
+void JRM_LOG_ERROR(const char* MESSAGE);
 
 void LOG_PRELOAD_ERROR(const char* MESSAGE);
 
 
 
 typedef void (*INSTRUCTION_FUNCTIONS)(void);
+
+
+
 
 
 
@@ -93,12 +99,16 @@ INSTRUCTION_FUNCTIONS INSTRUCTION_LIST[] =
         CMP_INTRUCTION,
         PUSH_INSTRUCTION,
         POP_INSTRUCTION,
-        LOADMODE_INSTRUCTION,
         LOAD_INSTRUCTION,
 
 };
 
 
+
+int JRM__INIT(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB);
+
+
+void JSM__EXIT();
 
 
 
@@ -112,7 +122,7 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
         if (JSM_FILE == NULL)
         {
 
-                JSM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
+                JRM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
 
 
                 return JSM_ERROR;
@@ -128,7 +138,7 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
         if ((*JSMCODE_LENGTH) < 0)
         {
 
-                JSM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
+                JRM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
 
 
                 fclose(JSM_FILE);
@@ -149,7 +159,7 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
         if ((*JSMCODE) == NULL)
         {
 
-                JSM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
+                JRM_LOG_ERROR("FAILED TO OPEN .jsm FILE");
 
 
                 fclose(JSM_FILE);
@@ -181,27 +191,40 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
 
 
 
-int JSM_INIT(const char* CODE, const size_t STACK_SIZE_MB)
+int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB)
 {
 
-        // [SETUP STACK]
+        // [SETUP MEMORY SPACE]
         {
 
-                STACK = malloc(1024 * 1024 * STACK_SIZE_MB);
+                const size_t MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * STACK_SIZE_MB);
 
 
-                if (STACK == NULL)
+                MEMORY_SPACE = malloc(MEMORY_SPACE_SIZE);
+
+
+                if (MEMORY_SPACE == NULL)
                 {
 
-                        LOG_PRELOAD_ERROR("FAILED TO ALLOCATE MEMORY FOR STACK");
+                        LOG_PRELOAD_ERROR("FAILED TO ALLOCATE PROGRAM MEMORY SPACE");
 
 
                         return JSM_ERROR;
 
                 }
 
+        }
 
-                memset(STACK, 0, 1024 * 1024 * STACK_SIZE_MB);
+
+        // [COPY CODE INTO MEMORY SPACE]
+        {
+
+                for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX ++)
+                {
+
+                        MEMORY_SPACE[INDEX] = CODE[INDEX];
+
+                }
 
         }
 
@@ -219,22 +242,47 @@ int JSM_INIT(const char* CODE, const size_t STACK_SIZE_MB)
         }
 
 
-        // [SET RDP]
+        // [SET RDP & RDB]
         {
 
-                for (CODE_INDEX = 0; CODE[CODE_INDEX] != END; CODE_INDEX += 17);
+                size_t INDEX;
 
 
-                CODE_INDEX += 17;
+                // [FIND END INSTRUCTION IN CODE]
+                // ------------------
+                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += 17);
 
 
-                DATA = (char*)CODE + CODE_INDEX;
+                INDEX += 17;
+
+
+                REGISTER_LIST[RDP] = INDEX;
+                REGISTER_LIST[RDB] = INDEX;
 
         }
 
 
-        OPERAND_1__TYPE = REG;
-        OPERAND_2__TYPE = VAL;
+        // [SET RSP & RSB]
+        {
+
+                REGISTER_LIST[RSP] = BYTECODE_SIZE;
+                REGISTER_LIST[RSB] = BYTECODE_SIZE;
+
+        }
+
+
+        // [SET / RESET RUNTIME DATA]
+        {
+
+                IS_RUNTIME_ERROR = FALSE;
+                EXIT_REQUESTED = FALSE;
+
+                OPERAND_1__TYPE = REG;
+                OPERAND_2__TYPE = VAL;
+
+                JSM_CURRENT_SOC = 1;
+
+        }
 
 
         return JSM_OK;
@@ -242,13 +290,10 @@ int JSM_INIT(const char* CODE, const size_t STACK_SIZE_MB)
 }
 
 
-int JSM__RUN(const char* CODE, const size_t STACK_SIZE_MB)
+int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB)
 {
 
-        const int INIT_STATUS = JSM_INIT(CODE, STACK_SIZE_MB);
-
-
-        printf("INITIALIZED !\n");
+        const int INIT_STATUS = JRM__INIT(CODE, CODE_SIZE, STACK_SIZE_MB);
 
 
         if (INIT_STATUS == JSM_ERROR)
@@ -259,45 +304,53 @@ int JSM__RUN(const char* CODE, const size_t STACK_SIZE_MB)
         }
 
 
-        for (CODE_INDEX = 0; CODE[CODE_INDEX] != END;)
+        for (CODE_INDEX = 0; ; )
         {
 
-                INSTRUCTION = CODE[CODE_INDEX];
-
-
-                // [WRITE BOTH OPERANDS]
+                // [EXECUTE INSTRUCTION]
                 {
 
-                        unsigned char USIGNED_LONG_SIZE = sizeof(unsigned long);
+                        INSTRUCTION = CODE[CODE_INDEX];
 
 
-                        OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 1]));
-                        OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 9]));
+                        // [WRITE BOTH OPERANDS]
+                        {
 
-                        // memcpy(&OPERAND_1, CODE + CODE_INDEX + 1, sizeof(unsigned long));
-                        // memcpy(&OPERAND_2, CODE + CODE_INDEX + 9, sizeof(unsigned long));
+                                unsigned char USIGNED_LONG_SIZE = sizeof(unsigned long);
+
+
+                                OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 1]));
+                                OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 9]));
+
+                        }
+
+
+                        DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                        INSTRUCTION_LIST[INSTRUCTION]();
 
                 }
 
 
-                printf("SIZEOF ULONG : %lu  |  O1 : %lu  |  O2  :  %lu \n", sizeof(unsigned long), OPERAND_1, OPERAND_2);
-
-
-                DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
-
-
-                INSTRUCTION_LIST[INSTRUCTION]();
-
-
-                if (!DO_NOT_INCREMENT_STATMENT_INDEX)
+                if (EXIT_REQUESTED)
                 {
 
-                        CODE_INDEX += 17;
+                        JSM__EXIT();
+
+
+                        return JSM_OK;
 
                 }
+
+
+
+                CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 17;
+
+
+                JSM_CURRENT_SOC ++;
 
         }
-
 
 
         return JSM_OK;
@@ -305,17 +358,57 @@ int JSM__RUN(const char* CODE, const size_t STACK_SIZE_MB)
 }
 
 
-void JSM_EXIT(unsigned char EXIT_CODE)
+void JSM__EXIT()
 {
 
+        free(MEMORY_SPACE);
 
+
+
+        // [PRINT EXIT STATUS]
+        {
+
+                printf("\033[1;31m[JRM EXIT]\033[0m : ");
+
+
+                if (EXIT_CODE == 0)
+                {
+
+                        printf("PROGRAM SUCCESSFULLY EXITED WITH CODE 0");
+
+                }
+                else if (EXIT_CODE == 3)
+                {
+
+                        printf("PROGRAM EXITED WITH CODE 3 : END STATMENT WAS CALLED, MAKE SURE TO CALL EXIT BEFORE END");
+
+                }
+                else if (EXIT_CODE == 11)
+                {
+
+                        printf("PROGRAM EXITED WITH CODE 11 : SEGMENTATION FAULT");
+
+                }
+                else
+                {
+
+                        printf("PROGRAM EXITED WITH CODE %d", EXIT_CODE);
+
+                }
+
+
+                printf("\n");
+
+        }
 
 }
+
 
 void EXIT_INSTRUCTION()
 {
 
-        JSM_EXIT(OPERAND_1);
+        EXIT_REQUESTED = TRUE;
+        EXIT_CODE = OPERAND_1;
 
 }
 
@@ -345,15 +438,7 @@ void CMP_INTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 17;
-
-
-        if (!CONDITION)
-        {
-
-                CODE_INDEX += 17;
-
-        }
+        CODE_INDEX += 17 + (17 * (!CONDITION));
 
 }
 
@@ -380,7 +465,8 @@ void SKIP_INSTRUCTION()
 void END_INSTRUCTION()
 {
 
-        JSM_EXIT(EXIT_WITH_END_WARNING_CODE);
+        EXIT_REQUESTED = TRUE;
+        EXIT_CODE = 3;
 
 }
 
@@ -396,7 +482,19 @@ void SET_INSTRUCTION()
 void JUMP_INSTRUCTION()
 {
 
-        CODE_INDEX = OPERAND_1 * 17;
+        if (OPERAND_1 == 0)
+        {
+
+                JRM_LOG_ERROR("SOC OF JUMP STATEMENT MUST NOT BE ZERO");
+
+
+                EXIT_REQUESTED = TRUE;
+                EXIT_CODE = 1;
+
+        }
+
+
+        CODE_INDEX = (OPERAND_1 - 1) * 17;
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
@@ -413,7 +511,7 @@ void PUSH_INSTRUCTION()
         for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
         {
 
-                STACK[INDEX + REGISTER_LIST[RSP]] = CHAR_PTR_CAST(OPERAND_1)[INDEX];
+                MEMORY_SPACE[INDEX + REGISTER_LIST[RSP]] = CHAR_PTR_CAST(OPERAND_1)[INDEX];
 
         }
 
@@ -432,7 +530,7 @@ void POP_INSTRUCTION()
         for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
         {
 
-                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = STACK[INDEX + REGISTER_LIST[RSP]];
+                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = MEMORY_SPACE[INDEX + REGISTER_LIST[RSP]];
 
         }
 
@@ -457,27 +555,10 @@ void LOAD_INSTRUCTION()
         CAST_OPERAND_TO_TYPE(&OPERAND_2);
 
 
-        char* AREA;
-
-
-        if (REGISTER_LIST[RLA] == 0)
-        {
-
-                AREA = STACK;
-
-        }
-        else
-        {
-
-                AREA = DATA;
-
-        }
-
-
         for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
         {
 
-                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = AREA[INDEX + REGISTER_LIST[RLP]];
+                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = MEMORY_SPACE[INDEX + REGISTER_LIST[RLA]];
 
         }
 
@@ -489,9 +570,6 @@ void SETMODE_INSTRUCTION()
 
         OPERAND_1__TYPE = OPERAND_1;
         OPERAND_2__TYPE = OPERAND_2;
-
-
-        printf("SETMODE OK!\n");
 
 }
 
@@ -551,10 +629,10 @@ void CAST_OPERAND_TO_TYPE(unsigned long* OPERAND)
 }
 
 
-void JSM_LOG_ERROR(const char* MESSAGE)
+void JRM_LOG_ERROR(const char* MESSAGE)
 {
 
-        fprintf(stderr, "\033[1;31m[JSVM ERROR]\033[0m : |  %s |\n", MESSAGE);
+        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JSM_CURRENT_SOC, MESSAGE);
 
 
         IS_RUNTIME_ERROR = TRUE;

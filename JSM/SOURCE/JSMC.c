@@ -42,7 +42,6 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"CMPLE", 2},
         {"PUSH", 2},
         {"POP", 2},
-        {"LOADMODE", 2},
         {"LOAD", 2},
         {"SYSCALL", 0},
         {NULL, NONE}
@@ -55,8 +54,9 @@ const char* REGISTER_STRINGS[] =
 {
 
         "RSP",
-        "RBP",
+        "RSB",
         "RDP",
+        "RDB",
         "RLA",
         "RLP",
         "RRA",
@@ -187,7 +187,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 
 
 
-        for (; BYTECODE_STATEMENT[0] != END && JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
+        for (; JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
         {
 
                 if (JSMCODE[JSMCODE_INDEX] == '\n')
@@ -258,13 +258,26 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
                 }
 
 
-                JSMCODE_INDEX += STATEMENT_LENGTH;
+                // [INCREMENT NUMBERS]
+                {
+
+                        JSMCODE_INDEX += STATEMENT_LENGTH;
 
 
-                JSMC_CURRENT_SOC ++;
+                        JSMC_CURRENT_SOC ++;
 
 
-                BYTECODE_INDEX += 17;
+                        BYTECODE_INDEX += 17;
+
+                }
+
+
+                if (BYTECODE_STATEMENT[0] == END)
+                {
+
+                        break;
+
+                }
 
         }
 
@@ -307,7 +320,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 
 
 
-        for (; BYTECODE_STATEMENT[0] != END && JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
+        for (; JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
         {
 
                 if (JSMCODE[JSMCODE_INDEX] == '\n')
@@ -383,13 +396,26 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                 }
 
 
-                JSMCODE_INDEX += STATEMENT_LENGTH;
+                // [INCREMENT NUMBERS]
+                {
+
+                        JSMCODE_INDEX += STATEMENT_LENGTH;
 
 
-                JSMC_CURRENT_SOC ++;
+                        JSMC_CURRENT_SOC ++;
 
 
-                BYTECODE_INDEX += 17;
+                        BYTECODE_INDEX += 17;
+
+                }
+
+
+                if (BYTECODE_STATEMENT[0] == END)
+                {
+
+                        break;
+
+                }
 
         }
 
@@ -677,6 +703,14 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
 
 
                         BYTECODE_STATEMENT[0] = INSTRUCTION_INDEX;
+
+
+                        if (IS_JSMC_ERROR)
+                        {
+
+                                return;
+
+                        }
 
                 }
                 else if (TOKEN_COUNT > INSTRUCTION_STRINGS_LIST[INSTRUCTION_INDEX].REQUIRED_OPERANDS + 1)
