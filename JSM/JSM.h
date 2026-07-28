@@ -77,14 +77,8 @@ enum REGISTERS_ENUM
 };
 
 
-enum MACRO_KEYS_ENUM
-{
-
-        REG,
-        VAL,
-        PREV,
-
-};
+#define REG 1
+#define VAL 0
 
 
 

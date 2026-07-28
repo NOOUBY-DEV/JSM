@@ -1,19 +1,22 @@
 #include "../JSM.h"
+#include <time.h>
 #include <stddef.h>
 #include <stdio.h>
 
 
-
-
+#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) OPERAND = (BYTECODE_STATEMENT[NUMBER]) ? (REGISTER_LIST[OPERAND] - OPERAND) : OPERAND
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
 
 #define EXIT_WITH_END_WARNING_CODE 32
 
 
 
+
 unsigned long REGISTER_LIST[REGISTER_COUNT];
 
 char* MEMORY_SPACE;
+
+char* BYTECODE_STATEMENT;
 
 size_t JSM_CURRENT_SOC = 1;
 
@@ -26,12 +29,11 @@ int EXIT_CODE;
 int DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
 
 
+
 size_t CODE_INDEX;
 unsigned char INSTRUCTION;
 unsigned long OPERAND_1;
 unsigned long OPERAND_2;
-unsigned char OPERAND_1__TYPE;
-unsigned char OPERAND_2__TYPE;
 
 
 
@@ -61,9 +63,6 @@ void LOADMODE_INSTRUCTION();
 
 void LOAD_INSTRUCTION();
 
-
-
-void CAST_OPERAND_TO_TYPE(unsigned long* OPERAND);
 
 void JRM_LOG_ERROR(const char* MESSAGE);
 
@@ -250,10 +249,10 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
 
                 // [FIND END INSTRUCTION IN CODE]
                 // ------------------
-                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += 17);
+                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += 19);
 
 
-                INDEX += 17;
+                INDEX += 19;
 
 
                 REGISTER_LIST[RDP] = INDEX;
@@ -276,9 +275,6 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
 
                 IS_RUNTIME_ERROR = FALSE;
                 EXIT_REQUESTED = FALSE;
-
-                OPERAND_1__TYPE = REG;
-                OPERAND_2__TYPE = VAL;
 
                 JSM_CURRENT_SOC = 1;
 
@@ -307,6 +303,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         for (CODE_INDEX = 0; ; )
         {
 
+                BYTECODE_STATEMENT = (char*)(CODE + CODE_INDEX);
+
+
                 // [EXECUTE INSTRUCTION]
                 {
 
@@ -319,8 +318,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 unsigned char USIGNED_LONG_SIZE = sizeof(unsigned long);
 
 
-                                OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 1]));
-                                OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 9]));
+                                OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 3]));
+                                OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 11]));
 
                         }
 
@@ -345,7 +344,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 17;
+                CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 19;
 
 
                 JSM_CURRENT_SOC ++;
@@ -419,8 +418,8 @@ void CMP_INTRUCTION()
         char CONDITION;
 
 
-        CAST_OPERAND_TO_TYPE(&OPERAND_1);
-        CAST_OPERAND_TO_TYPE(&OPERAND_2);
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
         switch (INSTRUCTION)
@@ -438,7 +437,7 @@ void CMP_INTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 17 + (17 * (!CONDITION));
+        CODE_INDEX += 19 + (19 * (!CONDITION));
 
 }
 
@@ -446,7 +445,7 @@ void CMP_INTRUCTION()
 void RETURN_INSTRUCTION()
 {
 
-        CODE_INDEX =  REGISTER_LIST[RRA] * 17;
+        CODE_INDEX =  REGISTER_LIST[RRA] * 19;
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
@@ -494,7 +493,7 @@ void JUMP_INSTRUCTION()
         }
 
 
-        CODE_INDEX = (OPERAND_1 - 1) * 17;
+        CODE_INDEX = (OPERAND_1 - 1) * 19;
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
@@ -505,7 +504,7 @@ void JUMP_INSTRUCTION()
 void PUSH_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(&OPERAND_1);
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
 
 
         for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
@@ -540,7 +539,7 @@ void POP_INSTRUCTION()
 void LOADMODE_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(&OPERAND_2);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
         REGISTER_LIST[RLA] = OPERAND_1;
@@ -552,7 +551,7 @@ void LOADMODE_INSTRUCTION()
 void LOAD_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(&OPERAND_2);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
         for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
@@ -568,8 +567,8 @@ void LOAD_INSTRUCTION()
 void SETMODE_INSTRUCTION()
 {
 
-        OPERAND_1__TYPE = OPERAND_1;
-        OPERAND_2__TYPE = OPERAND_2;
+        MEMORY_SPACE[CODE_INDEX + 20] = OPERAND_1;
+        MEMORY_SPACE[CODE_INDEX + 21] = OPERAND_2;
 
 }
 
@@ -577,7 +576,7 @@ void SETMODE_INSTRUCTION()
 void MATH_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(&OPERAND_2);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
         unsigned long* REGISTER = &REGISTER_LIST[OPERAND_1];
@@ -593,36 +592,6 @@ void MATH_INSTRUCTION()
                 case MUL: *REGISTER *= OPERAND_2; break;
 
                 case DIV: *REGISTER /= OPERAND_2; break;
-
-        }
-
-}
-
-
-void CAST_OPERAND_TO_TYPE(unsigned long* OPERAND)
-{
-
-        unsigned char OPERAND_TYPE;
-
-
-        if (OPERAND == &OPERAND_1)
-        {
-
-                OPERAND_TYPE = OPERAND_1__TYPE;
-
-        }
-        else
-        {
-
-                OPERAND_TYPE = OPERAND_2__TYPE;
-
-        }
-
-
-        if (OPERAND_TYPE == REG)
-        {
-
-                *OPERAND = REGISTER_LIST[*OPERAND];
 
         }
 

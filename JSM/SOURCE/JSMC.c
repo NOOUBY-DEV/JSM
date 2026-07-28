@@ -92,8 +92,8 @@ MACRO__STRING_TO_VALUE;
 const MACRO__STRING_TO_VALUE MACRO__STRING_TO_VALUE__LIST[] =
 {
 
-        {"REG", 0},
-        {"VAL", 1},
+        {"REG", 1},
+        {"VAL", 0},
         {"PREV", 2},
         {NULL, NONE},
 
@@ -154,7 +154,7 @@ int TOKEN_EQUALS(const char* TOKEN, const size_t TOKEN_LENGTH, const char* COMPA
 unsigned char GET_INSTRUCTION_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH);
 
 
-unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH);
+unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, unsigned char* OPERAND_TYPE);
 
 
 int TOKEN_IS_NUMBER(const char* TOKEN, const size_t TOKEN_LENGTH);
@@ -166,20 +166,20 @@ unsigned long long TOKEN_TO_NUMBER(const char* TOKEN, const size_t TOKEN_LENGTH)
 void JSMC_LOG_COMPILE_ERROR(const char* MESSAGE);
 
 
-void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_LENGTH, char* BYTECODE, size_t* JSMCODE_INDEX, size_t* BYTECODE_INDEX);
+void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_SIZE, char* BYTECODE, size_t* JSMCODE_INDEX, size_t* BYTECODE_INDEX);
 
 
 
 
 
-int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE)
+int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE)
 {
 
         MODE = SIZE_CHECK_MODE;
         IS_JSMC_ERROR = FALSE;
 
 
-        char BYTECODE_STATEMENT[17];
+        char BYTECODE_STATEMENT[19];
         BYTECODE_STATEMENT[0] = 0;
         size_t JSMCODE_INDEX = 0;
         size_t BYTECODE_INDEX = 0;
@@ -187,7 +187,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 
 
 
-        for (; JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
+        for (; JSMCODE_INDEX < JSMCODE_SIZE; JSMCODE_INDEX ++)
         {
 
                 if (JSMCODE[JSMCODE_INDEX] == '\n')
@@ -205,13 +205,13 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
                 // [FIND STATEMENT LENGTH]
                 {
 
-                        for (; JSMCODE[INDEX] != ';' && INDEX < JSMCODE_LENGTH; )
+                        for (; JSMCODE[INDEX] != ';' && INDEX < JSMCODE_SIZE; )
                         {
 
                                 if (JSMCODE[INDEX] == '/' && JSMCODE[INDEX + 1] == '/')
                                 {
 
-                                        for (; JSMCODE[INDEX] != '\n' && INDEX < JSMCODE_LENGTH; INDEX ++, STATEMENT_LENGTH ++);
+                                        for (; JSMCODE[INDEX] != '\n' && INDEX < JSMCODE_SIZE; INDEX ++, STATEMENT_LENGTH ++);
 
                                 }
                                 else
@@ -228,7 +228,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
                 }
 
 
-                if (INDEX >= JSMCODE_LENGTH)
+                if (INDEX >= JSMCODE_SIZE)
                 {
 
                         JSMCODE_INDEX += STATEMENT_LENGTH;
@@ -267,7 +267,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
                         JSMC_CURRENT_SOC ++;
 
 
-                        BYTECODE_INDEX += 17;
+                        BYTECODE_INDEX += 19;
 
                 }
 
@@ -282,7 +282,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
         }
 
 
-        if (JSMCODE_INDEX >= JSMCODE_LENGTH)
+        if (JSMCODE_INDEX >= JSMCODE_SIZE)
         {
 
                 JSMC_LOG_COMPILE_ERROR("MISSING END; STATEMENT");
@@ -296,7 +296,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
         }
 
 
-        PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_LENGTH, NULL, &JSMCODE_INDEX, &BYTECODE_INDEX);
+        PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_SIZE, NULL, &JSMCODE_INDEX, &BYTECODE_INDEX);
 
 
         *BYTECODE_SIZE = BYTECODE_INDEX;
@@ -307,12 +307,12 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 }
 
 
-int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE)
+int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE)
 {
 
         MODE = COMPILE_MODE;
         IS_JSMC_ERROR = FALSE;
-        char BYTECODE_STATEMENT[17];
+        char BYTECODE_STATEMENT[19];
         BYTECODE_STATEMENT[0] = 0;
         size_t JSMCODE_INDEX = 0;
         size_t BYTECODE_INDEX = 0;
@@ -320,7 +320,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 
 
 
-        for (; JSMCODE_INDEX < JSMCODE_LENGTH; JSMCODE_INDEX ++)
+        for (; JSMCODE_INDEX < JSMCODE_SIZE; JSMCODE_INDEX ++)
         {
 
                 if (JSMCODE[JSMCODE_INDEX] == '\n')
@@ -339,13 +339,13 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                 // [FIND STATEMENT LENGTH]
                 {
 
-                        for (; JSMCODE[INDEX] != ';' && INDEX < JSMCODE_LENGTH; )
+                        for (; JSMCODE[INDEX] != ';' && INDEX < JSMCODE_SIZE; )
                         {
 
                                 if (JSMCODE[INDEX] == '/' && JSMCODE[INDEX + 1] == '/')
                                 {
 
-                                        for (; JSMCODE[INDEX] != '\n' && INDEX < JSMCODE_LENGTH; INDEX ++, STATEMENT_LENGTH ++);
+                                        for (; JSMCODE[INDEX] != '\n' && INDEX < JSMCODE_SIZE; INDEX ++, STATEMENT_LENGTH ++);
 
                                 }
                                 else
@@ -362,7 +362,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                 }
 
 
-                if (INDEX >= JSMCODE_LENGTH)
+                if (INDEX >= JSMCODE_SIZE)
                 {
 
                         JSMCODE_INDEX += STATEMENT_LENGTH;
@@ -405,7 +405,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                         JSMC_CURRENT_SOC ++;
 
 
-                        BYTECODE_INDEX += 17;
+                        BYTECODE_INDEX += 19;
 
                 }
 
@@ -420,7 +420,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
         }
 
 
-        if (JSMCODE_INDEX >= JSMCODE_LENGTH)
+        if (JSMCODE_INDEX >= JSMCODE_SIZE)
         {
 
                 JSMC_LOG_COMPILE_ERROR("MISSING END; STATEMENT");
@@ -434,7 +434,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
         }
 
 
-        PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_LENGTH, BYTECODE, &JSMCODE_INDEX, &BYTECODE_INDEX);
+        PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_SIZE, BYTECODE, &JSMCODE_INDEX, &BYTECODE_INDEX);
 
 
         *BYTECODE_SIZE = BYTECODE_INDEX;
@@ -445,10 +445,10 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 }
 
 
-void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_LENGTH, char* BYTECODE, size_t* JSMCODE_INDEX, size_t* BYTECODE_INDEX)
+void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_SIZE, char* BYTECODE, size_t* JSMCODE_INDEX, size_t* BYTECODE_INDEX)
 {
 
-        for (; (*JSMCODE_INDEX) < JSMCODE_LENGTH; (*JSMCODE_INDEX) ++)
+        for ((*JSMCODE_INDEX) ++; (*JSMCODE_INDEX) < JSMCODE_SIZE; (*JSMCODE_INDEX) ++)
         {
 
                 char CHAR = JSMCODE[(*JSMCODE_INDEX)];
@@ -635,7 +635,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
         unsigned char INSTRUCTION_INDEX = 0;
 
 
-        for (unsigned char INDEX = 0; INDEX < 17; INDEX ++)
+        for (unsigned char INDEX = 0; INDEX < 19; INDEX ++)
         {
 
                 BYTECODE_STATEMENT[INDEX] = 0;
@@ -729,7 +729,8 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
                 // [SET OPERAND VALUE]
                 {
 
-                        unsigned long long OPERAND_VALUE = GET_OPERAND_VALUE(TOKEN, TOKEN_LENGTH);
+                        unsigned char OPERAND_TYPE;
+                        unsigned long long OPERAND_VALUE = GET_OPERAND_VALUE(TOKEN, TOKEN_LENGTH, &OPERAND_TYPE);
 
 
                         if (IS_JSMC_ERROR)
@@ -740,9 +741,11 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
                         }
 
 
-                        char* OPERAND_VALUE_BYTES = (char*)&OPERAND_VALUE;
-                        size_t BYTECODE_OPERAND_INDEX = (TOKEN_COUNT == 2) ? 1 : 9;
+                        BYTECODE_STATEMENT[TOKEN_COUNT - 1] = OPERAND_TYPE;
 
+
+                        char* OPERAND_VALUE_BYTES = (char*)&OPERAND_VALUE;
+                        size_t BYTECODE_OPERAND_INDEX = (TOKEN_COUNT == 2) ? 3 : 11;
 
 
                         for (unsigned short INDEX = 0; INDEX < 8; INDEX ++)
@@ -827,7 +830,7 @@ unsigned char GET_INSTRUCTION_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH
 }
 
 
-unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH)
+unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, unsigned char* OPERAND_TYPE)
 {
 
         for (unsigned char INDEX = 0; REGISTER_STRINGS[INDEX] != NULL; INDEX ++)
@@ -835,6 +838,9 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH)
 
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, REGISTER_STRINGS[INDEX]))
                 {
+
+                        *OPERAND_TYPE = REG;
+
 
                         return INDEX;
 
@@ -851,6 +857,9 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH)
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, CURRENT_MACRO__STRING_TO_VALUE.STRING))
                 {
 
+                        *OPERAND_TYPE = VAL;
+
+
                         return CURRENT_MACRO__STRING_TO_VALUE.VALUE;
 
                 }
@@ -860,6 +869,9 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH)
 
         if (TOKEN_IS_NUMBER(TOKEN, TOKEN_LENGTH))
         {
+
+                *OPERAND_TYPE = VAL;
+
 
                 return TOKEN_TO_NUMBER(TOKEN, TOKEN_LENGTH);
 
@@ -990,7 +1002,7 @@ unsigned long long TOKEN_TO_NUMBER(const char* TOKEN, const size_t TOKEN_LENGTH)
 void APPEND__STATEMENT_TO_BYTECODE(char* BYTECODE, const size_t STARTING_INDEX, const char* STATEMENT)
 {
 
-        for (size_t INDEX = 0; INDEX < 17; INDEX ++)
+        for (size_t INDEX = 0; INDEX < 19; INDEX ++)
         {
 
                 BYTECODE[INDEX + STARTING_INDEX] = STATEMENT[INDEX];
