@@ -66,5 +66,7 @@ ANY NEWLINE AND 	TAB CHARACTER IS DISCARED\0
 
 #### When compiled, the final bytecode can be visualized like this
 
-<img width="641" height="647" alt="image" src="https://github.com/user-attachments/assets/be804fcd-2b2f-4ee4-b8cd-bb8d5a60914e" />
+<img width="810" height="675" alt="image" src="https://github.com/user-attachments/assets/5dd861eb-afda-457f-80dc-868723d328b3" />
+
+
 
