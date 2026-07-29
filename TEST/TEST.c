@@ -25,7 +25,7 @@ int main()
         // [GET .jsm FILE AND COMPILE]
         {
 
-                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/STACK_TEST.jsm", &JSMCODE_SIZE, &JSMCODE);
+                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/BILLION_ITERATIONS.jsm", &JSMCODE_SIZE, &JSMCODE);
 
 
                 if (OPEN_STATUS == 0)
@@ -71,8 +71,8 @@ int main()
 
 
                 printf("\n\n");
-                printf("IN T1 T2           OPR1                   OPR2\n");
-                printf("┌┐ ┌┐ ┌┐ ┌─────────────────────┐ ┌─────────────────────┐\n");
+                printf("IN T1 T2     EXTRA                OPR1                   OPR2\n");
+                printf("┌┐ ┌┐ ┌┐ ┌────────────┐ ┌─────────────────────┐ ┌─────────────────────┐\n");
 
 
 
@@ -99,17 +99,17 @@ int main()
                         printf("%02x ", CHAR);
 
 
-                        if ((INDEX + 1) % 19 == 0)
+                        if ((INDEX + 1) % BYTECODE_STATEMENT_SIZE == 0)
                         {
 
 
-                                if ((BYTECODE[(INDEX + 1) - 19] == END) && WAITING_FOR_END)
+                                if ((BYTECODE[(INDEX + 1) - BYTECODE_STATEMENT_SIZE] == END) && WAITING_FOR_END)
                                 {
 
                                         printf("\033[0m\n");
-                                        printf("────────────────────────────────────────────────────────\n");
-                                        printf("//                     DATA BELOW                     //\n");
-                                        printf("────────────────────────────────────────────────────────");
+                                        printf("─────────────────────────────────────────────────────────────────────\n");
+                                        printf("//                          DATA BELOW                            //\n");
+                                        printf("─────────────────────────────────────────────────────────────────────");
 
 
                                         WAITING_FOR_END = FALSE;

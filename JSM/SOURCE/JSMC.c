@@ -179,7 +179,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_SIZE, size_t* B
         IS_JSMC_ERROR = FALSE;
 
 
-        char BYTECODE_STATEMENT[19];
+        char BYTECODE_STATEMENT[BYTECODE_STATEMENT_SIZE];
         BYTECODE_STATEMENT[0] = 0;
         size_t JSMCODE_INDEX = 0;
         size_t BYTECODE_INDEX = 0;
@@ -267,7 +267,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_SIZE, size_t* B
                         JSMC_CURRENT_SOC ++;
 
 
-                        BYTECODE_INDEX += 19;
+                        BYTECODE_INDEX += BYTECODE_STATEMENT_SIZE;
 
                 }
 
@@ -312,7 +312,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 
         MODE = COMPILE_MODE;
         IS_JSMC_ERROR = FALSE;
-        char BYTECODE_STATEMENT[19];
+        char BYTECODE_STATEMENT[BYTECODE_STATEMENT_SIZE];
         BYTECODE_STATEMENT[0] = 0;
         size_t JSMCODE_INDEX = 0;
         size_t BYTECODE_INDEX = 0;
@@ -405,7 +405,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                         JSMC_CURRENT_SOC ++;
 
 
-                        BYTECODE_INDEX += 19;
+                        BYTECODE_INDEX += BYTECODE_STATEMENT_SIZE;
 
                 }
 
@@ -635,7 +635,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
         unsigned char INSTRUCTION_INDEX = 0;
 
 
-        for (unsigned char INDEX = 0; INDEX < 19; INDEX ++)
+        for (unsigned char INDEX = 0; INDEX < BYTECODE_STATEMENT_SIZE; INDEX ++)
         {
 
                 BYTECODE_STATEMENT[INDEX] = 0;
@@ -745,7 +745,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
 
 
                         char* OPERAND_VALUE_BYTES = (char*)&OPERAND_VALUE;
-                        size_t BYTECODE_OPERAND_INDEX = (TOKEN_COUNT == 2) ? 3 : 11;
+                        size_t BYTECODE_OPERAND_INDEX = (TOKEN_COUNT == 2) ? 8 : 16;
 
 
                         for (unsigned short INDEX = 0; INDEX < 8; INDEX ++)
@@ -839,7 +839,7 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, un
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, REGISTER_STRINGS[INDEX]))
                 {
 
-                        *OPERAND_TYPE = REG;
+                        *OPERAND_TYPE |= (REG << OPERAND_1_TYPE_INDEX);
 
 
                         return INDEX;
@@ -857,7 +857,7 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, un
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, CURRENT_MACRO__STRING_TO_VALUE.STRING))
                 {
 
-                        *OPERAND_TYPE = VAL;
+                        *OPERAND_TYPE |= (REG << OPERAND_1_TYPE_INDEX);
 
 
                         return CURRENT_MACRO__STRING_TO_VALUE.VALUE;
@@ -1002,7 +1002,7 @@ unsigned long long TOKEN_TO_NUMBER(const char* TOKEN, const size_t TOKEN_LENGTH)
 void APPEND__STATEMENT_TO_BYTECODE(char* BYTECODE, const size_t STARTING_INDEX, const char* STATEMENT)
 {
 
-        for (size_t INDEX = 0; INDEX < 19; INDEX ++)
+        for (size_t INDEX = 0; INDEX < BYTECODE_STATEMENT_SIZE; INDEX ++)
         {
 
                 BYTECODE[INDEX + STARTING_INDEX] = STATEMENT[INDEX];

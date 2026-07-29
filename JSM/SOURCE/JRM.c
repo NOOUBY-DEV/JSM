@@ -16,9 +16,9 @@
 //
         unsigned long REGISTER_LIST[REGISTER_COUNT];
 
-        char* MEMORY_SPACE;
+        char* restrict MEMORY_SPACE;
 
-        char* BYTECODE_STATEMENT;
+        char* restrict BYTECODE_STATEMENT;
 
         size_t JSM_CURRENT_SOC;
 
@@ -51,7 +51,7 @@
 
         void SKIP_INSTRUCTION();
 
-        void SET_INSTRUCTION();
+        static inline void SET_INSTRUCTION();
 
         void SETMODE_INSTRUCTION();
 
@@ -258,10 +258,10 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
 
                 // [FIND END INSTRUCTION IN CODE]
                 // ------------------
-                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += 19);
+                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
 
 
-                INDEX += 19;
+                INDEX += BYTECODE_STATEMENT_SIZE;
 
 
                 REGISTER_LIST[RDP] = INDEX;
@@ -325,8 +325,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         // [WRITE BOTH OPERANDS]
                         {
 
-                                OPERAND_1 = *((unsigned long*)&(MEMORY_SPACE[CODE_INDEX + 3]));
-                                OPERAND_2 = *((unsigned long*)&(MEMORY_SPACE[CODE_INDEX + 11]));
+                                OPERAND_1 = *(((unsigned long*)(MEMORY_SPACE + CODE_INDEX)) + 1);
+                                OPERAND_2 = *(((unsigned long*)(MEMORY_SPACE + CODE_INDEX)) + 2);
 
                         }
 
@@ -353,7 +353,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                 // [INCREMENT]
                 {
 
-                        CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 19;
+                        CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * BYTECODE_STATEMENT_SIZE;
 
 
                         JSM_CURRENT_SOC ++;
@@ -433,7 +433,7 @@ void CMPE_INSTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!(OPERAND_1 == OPERAND_2)));
+        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 == OPERAND_2)));
 
 }
 
@@ -448,7 +448,7 @@ void CMPH_INSTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!(OPERAND_1 > OPERAND_2)));
+        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 > OPERAND_2)));
 
 }
 
@@ -463,7 +463,7 @@ void CMPL_INSTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!(OPERAND_1 < OPERAND_2)));
+        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 < OPERAND_2)));
 
 }
 
@@ -478,7 +478,7 @@ void CMPHE_INSTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!(OPERAND_1 >= OPERAND_2)));
+        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 >= OPERAND_2)));
 
 }
 
@@ -493,7 +493,7 @@ void CMPLE_INSTRUCTION()
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!(OPERAND_1 <= OPERAND_2)));
+        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 <= OPERAND_2)));
 
 }
 
@@ -501,7 +501,7 @@ void CMPLE_INSTRUCTION()
 void RETURN_INSTRUCTION()
 {
 
-        CODE_INDEX =  REGISTER_LIST[RRA] * 19;
+        CODE_INDEX =  REGISTER_LIST[RRA] * BYTECODE_STATEMENT_SIZE;
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
@@ -526,7 +526,7 @@ void END_INSTRUCTION()
 }
 
 
-void SET_INSTRUCTION()
+static inline void SET_INSTRUCTION()
 {
 
         REGISTER_LIST[OPERAND_1] = OPERAND_2;
@@ -549,7 +549,7 @@ void JUMP_INSTRUCTION()
         }
 
 
-        CODE_INDEX = (OPERAND_1 - 1) * 19;
+        CODE_INDEX = (OPERAND_1 - 1) * BYTECODE_STATEMENT_SIZE;
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
@@ -611,8 +611,8 @@ void LOAD_INSTRUCTION()
 void SETMODE_INSTRUCTION()
 {
 
-        MEMORY_SPACE[CODE_INDEX + 20] = OPERAND_1;
-        MEMORY_SPACE[CODE_INDEX + 21] = OPERAND_2;
+        MEMORY_SPACE[CODE_INDEX + 25] = OPERAND_1;
+        MEMORY_SPACE[CODE_INDEX + 26] = OPERAND_2;
 
 }
 

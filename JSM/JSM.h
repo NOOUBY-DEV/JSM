@@ -8,6 +8,8 @@
 #include <stddef.h>
 
 
+#define BYTECODE_STATEMENT_SIZE 24
+
 
 #define REGISTER_COUNT 255
 
@@ -77,6 +79,9 @@ enum REGISTERS_ENUM
 
 #define REG 1
 #define VAL 0
+
+#define OPERAND_1_TYPE_INDEX 0
+#define OPERAND_2_TYPE_INDEX 1
 
 
 
