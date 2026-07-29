@@ -313,20 +313,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         while (TRUE)
         {
 
-                BYTECODE_STATEMENT = (char*)(CODE + CODE_INDEX);
+                BYTECODE_STATEMENT = (char*)(MEMORY_SPACE + CODE_INDEX);
 
 
                 // [EXECUTE INSTRUCTION]
                 {
 
-                        INSTRUCTION = CODE[CODE_INDEX];
+                        INSTRUCTION = MEMORY_SPACE[CODE_INDEX];
 
 
                         // [WRITE BOTH OPERANDS]
                         {
 
-                                OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 3]));
-                                OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 11]));
+                                OPERAND_1 = *((unsigned long*)&(MEMORY_SPACE[CODE_INDEX + 3]));
+                                OPERAND_2 = *((unsigned long*)&(MEMORY_SPACE[CODE_INDEX + 11]));
 
                         }
 
