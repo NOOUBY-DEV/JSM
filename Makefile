@@ -1,6 +1,6 @@
 C_FLAGS = -I./JSM
 GCC_FLAGS = -g
-#-O3 -march=native
+#-Ofast
 OUTPUT_FOLDER = NOOUBYS_OUTPUT
 JSM_SOURCE_FILES = $(shell find JSM -name "*.c")
 

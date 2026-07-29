@@ -1,9 +1,11 @@
 #include "../JSM.h"
+#include <stddef.h>
+#include <time.h>
 
 
 
 
-#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) OPERAND = (BYTECODE_STATEMENT[NUMBER]) ? REGISTER_LIST[OPERAND] : OPERAND
+#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) OPERAND = (JRM.MEMORY_SPACE[JRM.CODE_INDEX + NUMBER]) ? JRM.REGISTER_LIST[OPERAND] : OPERAND
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
 
 
@@ -12,31 +14,33 @@
 
 
 
-// [GLOBAL VARIABLES]
-//
+typedef struct JRM_DATA
+{
+
         unsigned long REGISTER_LIST[REGISTER_COUNT];
 
         char* restrict MEMORY_SPACE;
 
-        char* restrict BYTECODE_STATEMENT;
-
+        size_t CODE_INDEX;
         size_t JSM_CURRENT_SOC;
 
-        long IS_RUNTIME_ERROR;
-
-        long EXIT_REQUESTED;
-
-        long EXIT_CODE;
-
-        long DO_NOT_INCREMENT_STATMENT_INDEX;
-
-        size_t CODE_INDEX;
+        size_t MEMORY_SPACE_SIZE;
 
         unsigned long INSTRUCTION;
         unsigned long OPERAND_1;
         unsigned long OPERAND_2;
 
-//
+        unsigned long EXIT_CODE;
+
+        unsigned char EXIT_REQUESTED;
+        unsigned char DO_NOT_INCREMENT_STATMENT_INDEX;
+
+}
+JRM_DATA;
+
+
+
+JRM_DATA JRM;
 
 
 // [INSTRUCTIONS DECLERATION]
@@ -51,9 +55,7 @@
 
         void SKIP_INSTRUCTION();
 
-        static inline void SET_INSTRUCTION();
-
-        void SETMODE_INSTRUCTION();
+        void SET_INSTRUCTION();
 
         void ADD_INSTRUCTION();
 
@@ -82,7 +84,7 @@
 //
 
 
-void (*INSTRUCTION_LIST[])(void) =
+static void (*INSTRUCTION_LIST[])(void) =
 {
 
         EXIT_INSTRUCTION,
@@ -90,7 +92,6 @@ void (*INSTRUCTION_LIST[])(void) =
         END_INSTRUCTION,
         JUMP_INSTRUCTION,
         SKIP_INSTRUCTION,
-        SETMODE_INSTRUCTION,
         SET_INSTRUCTION,
         ADD_INSTRUCTION,
         SUB_INSTRUCTION,
@@ -205,13 +206,13 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
         // [SETUP MEMORY SPACE]
         {
 
-                const size_t MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * STACK_SIZE_MB);
+                JRM.MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * STACK_SIZE_MB);
 
 
-                MEMORY_SPACE = malloc(MEMORY_SPACE_SIZE);
+                JRM.MEMORY_SPACE = malloc(JRM.MEMORY_SPACE_SIZE);
 
 
-                if (MEMORY_SPACE == NULL)
+                if (JRM.MEMORY_SPACE == NULL)
                 {
 
                         LOG_PRELOAD_ERROR("FAILED TO ALLOCATE PROGRAM MEMORY SPACE");
@@ -230,7 +231,7 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
                 for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX ++)
                 {
 
-                        MEMORY_SPACE[INDEX] = CODE[INDEX];
+                        JRM.MEMORY_SPACE[INDEX] = CODE[INDEX];
 
                 }
 
@@ -243,7 +244,7 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
                 for (unsigned char INDEX = 0; INDEX < REGISTER_COUNT; INDEX ++)
                 {
 
-                        REGISTER_LIST[INDEX] = 0;
+                        JRM.REGISTER_LIST[INDEX] = 0;
 
                 }
 
@@ -258,14 +259,14 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
 
                 // [FIND END INSTRUCTION IN CODE]
                 // ------------------
-                for (INDEX = 0; MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
+                for (INDEX = 0; JRM.MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
 
 
                 INDEX += BYTECODE_STATEMENT_SIZE;
 
 
-                REGISTER_LIST[RDP] = INDEX;
-                REGISTER_LIST[RDB] = INDEX;
+                JRM.REGISTER_LIST[RDP] = INDEX;
+                JRM.REGISTER_LIST[RDB] = INDEX;
 
         }
 
@@ -273,8 +274,8 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
         // [SET RSP & RSB]
         {
 
-                REGISTER_LIST[RSP] = BYTECODE_SIZE;
-                REGISTER_LIST[RSB] = BYTECODE_SIZE;
+                JRM.REGISTER_LIST[RSP] = BYTECODE_SIZE;
+                JRM.REGISTER_LIST[RSB] = BYTECODE_SIZE;
 
         }
 
@@ -282,11 +283,10 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
         // [SET / RESET RUNTIME DATA]
         {
 
-                IS_RUNTIME_ERROR = FALSE;
-                EXIT_REQUESTED = FALSE;
+                JRM.EXIT_REQUESTED = FALSE;
 
-                CODE_INDEX = 0;
-                JSM_CURRENT_SOC = 1;
+                JRM.CODE_INDEX = 0;
+                JRM.JSM_CURRENT_SOC = 1;
 
         }
 
@@ -310,42 +310,28 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         }
 
 
-        while (TRUE)
+        while (!JRM.EXIT_REQUESTED)
         {
-
-                BYTECODE_STATEMENT = (char*)(MEMORY_SPACE + CODE_INDEX);
-
 
                 // [EXECUTE INSTRUCTION]
                 {
 
-                        INSTRUCTION = MEMORY_SPACE[CODE_INDEX];
+                        JRM.INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
 
 
                         // [WRITE BOTH OPERANDS]
                         {
 
-                                OPERAND_1 = *(((unsigned long*)(MEMORY_SPACE + CODE_INDEX)) + 1);
-                                OPERAND_2 = *(((unsigned long*)(MEMORY_SPACE + CODE_INDEX)) + 2);
+                                JRM.OPERAND_1 = *((unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX) + 1);
+                                JRM.OPERAND_2 = *((unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX) + 2);
 
                         }
 
 
-                        DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
+                        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                        INSTRUCTION_LIST[INSTRUCTION]();
-
-                }
-
-
-                if (EXIT_REQUESTED)
-                {
-
-                        JSM__EXIT();
-
-
-                        return JSM_OK;
+                        INSTRUCTION_LIST[JRM.INSTRUCTION]();
 
                 }
 
@@ -353,14 +339,17 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                 // [INCREMENT]
                 {
 
-                        CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * BYTECODE_STATEMENT_SIZE;
+                        JRM.CODE_INDEX += (!JRM.DO_NOT_INCREMENT_STATMENT_INDEX) * BYTECODE_STATEMENT_SIZE;
 
 
-                        JSM_CURRENT_SOC ++;
+                        JRM.JSM_CURRENT_SOC ++;
 
                 }
 
         }
+
+
+        JSM__EXIT();
 
 
         return JSM_OK;
@@ -371,7 +360,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 void JSM__EXIT()
 {
 
-        free(MEMORY_SPACE);
+        free(JRM.MEMORY_SPACE);
 
 
 
@@ -381,19 +370,19 @@ void JSM__EXIT()
                 printf("\033[1;31m[JRM EXIT]\033[0m : ");
 
 
-                if (EXIT_CODE == 0)
+                if (JRM.EXIT_CODE == 0)
                 {
 
                         printf("PROGRAM SUCCESSFULLY EXITED WITH CODE 0");
 
                 }
-                else if (EXIT_CODE == 3)
+                else if (JRM.EXIT_CODE == 3)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 3 : END STATMENT WAS CALLED, MAKE SURE TO CALL EXIT BEFORE END");
 
                 }
-                else if (EXIT_CODE == 11)
+                else if (JRM.EXIT_CODE == 11)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 11 : SEGMENTATION FAULT");
@@ -402,7 +391,7 @@ void JSM__EXIT()
                 else
                 {
 
-                        printf("PROGRAM EXITED WITH CODE %ld", EXIT_CODE);
+                        printf("PROGRAM EXITED WITH CODE %ld", JRM.EXIT_CODE);
 
                 }
 
@@ -417,8 +406,8 @@ void JSM__EXIT()
 void EXIT_INSTRUCTION()
 {
 
-        EXIT_REQUESTED = TRUE;
-        EXIT_CODE = OPERAND_1;
+        JRM.EXIT_REQUESTED = TRUE;
+        JRM.EXIT_CODE = JRM.OPERAND_1;
 
 }
 
@@ -426,14 +415,14 @@ void EXIT_INSTRUCTION()
 void CMPE_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 == OPERAND_2)));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (JRM.OPERAND_1 != JRM.OPERAND_2));
 
 }
 
@@ -441,14 +430,14 @@ void CMPE_INSTRUCTION()
 void CMPH_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 > OPERAND_2)));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (JRM.OPERAND_1 <= JRM.OPERAND_2));
 
 }
 
@@ -456,14 +445,14 @@ void CMPH_INSTRUCTION()
 void CMPL_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 < OPERAND_2)));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (JRM.OPERAND_1 >= JRM.OPERAND_2));
 
 }
 
@@ -471,14 +460,14 @@ void CMPL_INSTRUCTION()
 void CMPHE_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 >= OPERAND_2)));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (JRM.OPERAND_1 < JRM.OPERAND_2));
 
 }
 
@@ -486,14 +475,14 @@ void CMPHE_INSTRUCTION()
 void CMPLE_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!(OPERAND_1 <= OPERAND_2)));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (JRM.OPERAND_1 > JRM.OPERAND_2));
 
 }
 
@@ -501,10 +490,10 @@ void CMPLE_INSTRUCTION()
 void RETURN_INSTRUCTION()
 {
 
-        CODE_INDEX =  REGISTER_LIST[RRA] * BYTECODE_STATEMENT_SIZE;
+        JRM.CODE_INDEX = JRM.REGISTER_LIST[RRA] * BYTECODE_STATEMENT_SIZE;
 
 
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 }
 
@@ -520,16 +509,16 @@ void SKIP_INSTRUCTION()
 void END_INSTRUCTION()
 {
 
-        EXIT_REQUESTED = TRUE;
-        EXIT_CODE = 3;
+        JRM.EXIT_REQUESTED = TRUE;
+        JRM.EXIT_CODE = 3;
 
 }
 
 
-static inline void SET_INSTRUCTION()
+void SET_INSTRUCTION()
 {
 
-        REGISTER_LIST[OPERAND_1] = OPERAND_2;
+        JRM.REGISTER_LIST[JRM.OPERAND_1] = JRM.OPERAND_2;
 
 }
 
@@ -537,22 +526,10 @@ static inline void SET_INSTRUCTION()
 void JUMP_INSTRUCTION()
 {
 
-        if (OPERAND_1 == 0)
-        {
-
-                JRM_LOG_ERROR("SOC OF JUMP STATEMENT MUST NOT BE ZERO");
+        JRM.CODE_INDEX = (JRM.OPERAND_1 - 1) * BYTECODE_STATEMENT_SIZE;
 
 
-                EXIT_REQUESTED = TRUE;
-                EXIT_CODE = 1;
-
-        }
-
-
-        CODE_INDEX = (OPERAND_1 - 1) * BYTECODE_STATEMENT_SIZE;
-
-
-        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+        JRM.DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 }
 
@@ -560,18 +537,27 @@ void JUMP_INSTRUCTION()
 void PUSH_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
-
-
-        for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
+        if (JRM.REGISTER_LIST[RSP] + JRM.OPERAND_2 >= JRM.MEMORY_SPACE_SIZE)
         {
 
-                MEMORY_SPACE[INDEX + REGISTER_LIST[RSP]] = CHAR_PTR_CAST(OPERAND_1)[INDEX];
+                JRM.EXIT_CODE = 11;
+                JRM.EXIT_REQUESTED = TRUE;
 
         }
 
 
-        REGISTER_LIST[RSP] += OPERAND_2;
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+        for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
+        {
+
+                JRM.MEMORY_SPACE[INDEX + JRM.REGISTER_LIST[RSP]] = CHAR_PTR_CAST(JRM.OPERAND_1)[INDEX];
+
+        }
+
+
+        JRM.REGISTER_LIST[RSP] += JRM.OPERAND_2;
 
 }
 
@@ -579,13 +565,22 @@ void PUSH_INSTRUCTION()
 void POP_INSTRUCTION()
 {
 
-        REGISTER_LIST[RSP] -= OPERAND_2;
-
-
-        for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
+        if (JRM.REGISTER_LIST[RSP] >= JRM.MEMORY_SPACE_SIZE)
         {
 
-                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = MEMORY_SPACE[INDEX + REGISTER_LIST[RSP]];
+                JRM.EXIT_CODE = 11;
+                JRM.EXIT_REQUESTED = TRUE;
+
+        }
+
+
+        JRM.REGISTER_LIST[RSP] -= JRM.OPERAND_2;
+
+
+        for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
+        {
+
+                CHAR_PTR_CAST(JRM.REGISTER_LIST[JRM.OPERAND_1])[INDEX] = JRM.MEMORY_SPACE[INDEX + JRM.REGISTER_LIST[RSP]];
 
         }
 
@@ -595,24 +590,15 @@ void POP_INSTRUCTION()
 void LOAD_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        for (unsigned char INDEX = 0; INDEX < OPERAND_2; INDEX ++)
+        for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
         {
 
-                CHAR_PTR_CAST(REGISTER_LIST[OPERAND_1])[INDEX] = MEMORY_SPACE[INDEX + REGISTER_LIST[RLA]];
+                CHAR_PTR_CAST(JRM.REGISTER_LIST[JRM.OPERAND_1])[INDEX] = JRM.MEMORY_SPACE[INDEX + JRM.REGISTER_LIST[RLA]];
 
         }
-
-}
-
-
-void SETMODE_INSTRUCTION()
-{
-
-        MEMORY_SPACE[CODE_INDEX + 25] = OPERAND_1;
-        MEMORY_SPACE[CODE_INDEX + 26] = OPERAND_2;
 
 }
 
@@ -620,10 +606,10 @@ void SETMODE_INSTRUCTION()
 void ADD_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        REGISTER_LIST[OPERAND_1] += OPERAND_2;
+        JRM.REGISTER_LIST[JRM.OPERAND_1] += JRM.OPERAND_2;
 
 }
 
@@ -631,10 +617,10 @@ void ADD_INSTRUCTION()
 void SUB_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        REGISTER_LIST[OPERAND_1] -= OPERAND_2;
+        JRM.REGISTER_LIST[JRM.OPERAND_1] -= JRM.OPERAND_2;
 
 }
 
@@ -642,10 +628,10 @@ void SUB_INSTRUCTION()
 void MUL_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        REGISTER_LIST[OPERAND_1] *= OPERAND_2;
+        JRM.REGISTER_LIST[JRM.OPERAND_1] *= JRM.OPERAND_2;
 
 }
 
@@ -653,10 +639,10 @@ void MUL_INSTRUCTION()
 void DIV_INSTRUCTION()
 {
 
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+        CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        REGISTER_LIST[OPERAND_1] /= OPERAND_2;
+        JRM.REGISTER_LIST[JRM.OPERAND_1] /= JRM.OPERAND_2;
 
 }
 
@@ -664,10 +650,7 @@ void DIV_INSTRUCTION()
 void JRM_LOG_ERROR(const char* MESSAGE)
 {
 
-        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JSM_CURRENT_SOC, MESSAGE);
-
-
-        IS_RUNTIME_ERROR = TRUE;
+        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JRM.JSM_CURRENT_SOC, MESSAGE);
 
 }
 
@@ -676,8 +659,5 @@ void LOG_PRELOAD_ERROR(const char* MESSAGE)
 {
 
         fprintf(stderr, "\033[1;31m[JSVM ERROR]\033[0m : | %s |\n", MESSAGE);
-
-
-        IS_RUNTIME_ERROR = TRUE;
 
 }

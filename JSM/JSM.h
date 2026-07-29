@@ -30,7 +30,6 @@ enum INTRUCTIONS_ENUM
         END,
         JUMP,
         SKIP,
-        SETMODE,
         SET,
         ADD,
         SUB,

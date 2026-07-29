@@ -8,6 +8,9 @@
 #define COMPILE_MODE 1
 
 
+#define UNSIGNED_LONG_PTR_CAST(POINTER) ((unsigned long*)(POINTER))
+
+
 
 typedef struct INTRUCTION__STRING_TO_REQUIRED_OPERANDS
 {
@@ -29,7 +32,6 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"END", 0},
         {"JUMP", 1},
         {"SKIP", 0},
-        {"SETMODE", 2},
         {"SET", 2},
         {"ADD", 2},
         {"SUB", 2},
@@ -43,7 +45,6 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"PUSH", 2},
         {"POP", 2},
         {"LOAD", 2},
-        {"SYSCALL", 0},
         {NULL, NONE}
 
 
@@ -169,6 +170,7 @@ void JSMC_LOG_COMPILE_ERROR(const char* MESSAGE);
 void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_SIZE, char* BYTECODE, size_t* JSMCODE_INDEX, size_t* BYTECODE_INDEX);
 
 
+void CHECK_SPECIAL_CASE(char* BYTECODE_STATEMENT);
 
 
 
@@ -776,6 +778,9 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
 
         }
 
+
+        CHECK_SPECIAL_CASE(BYTECODE_STATEMENT);
+
 }
 
 
@@ -901,6 +906,30 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, un
 
 
         return 0;
+
+}
+
+
+void CHECK_SPECIAL_CASE(char* BYTECODE_STATEMENT)
+{
+
+        switch (BYTECODE_STATEMENT[0])
+        {
+
+                case JUMP:
+                {
+
+                        if ((!BYTECODE_STATEMENT[1]) && *UNSIGNED_LONG_PTR_CAST(BYTECODE_STATEMENT + 8) == 0)
+                        {
+
+                                JSMC_LOG_COMPILE_ERROR("OPERAND 1 VALUE OF FOR INSTRUCTION 'JUMP' MUST BE ATLEAST 1");
+
+                        }
+
+                }
+                break;
+
+        }
 
 }
 
