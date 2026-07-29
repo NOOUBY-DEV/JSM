@@ -1,83 +1,88 @@
 #include "../JSM.h"
-#include <time.h>
-#include <stddef.h>
-#include <stdio.h>
 
 
-#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) OPERAND = (BYTECODE_STATEMENT[NUMBER]) ? (REGISTER_LIST[OPERAND] - OPERAND) : OPERAND
+
+
+#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) OPERAND = (BYTECODE_STATEMENT[NUMBER]) ? REGISTER_LIST[OPERAND] : OPERAND
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
 
-#define EXIT_WITH_END_WARNING_CODE 32
+
+
+#define EXIT_WITH_END_WARNING_CODE 3
 
 
 
+// [GLOBAL VARIABLES]
+//
+        unsigned long REGISTER_LIST[REGISTER_COUNT];
 
-unsigned long REGISTER_LIST[REGISTER_COUNT];
+        char* MEMORY_SPACE;
 
-char* MEMORY_SPACE;
+        char* BYTECODE_STATEMENT;
 
-char* BYTECODE_STATEMENT;
+        size_t JSM_CURRENT_SOC;
 
-size_t JSM_CURRENT_SOC = 1;
+        long IS_RUNTIME_ERROR;
 
-int IS_RUNTIME_ERROR = FALSE;
+        long EXIT_REQUESTED;
 
-int EXIT_REQUESTED = FALSE;
+        long EXIT_CODE;
 
-int EXIT_CODE;
+        long DO_NOT_INCREMENT_STATMENT_INDEX;
 
-int DO_NOT_INCREMENT_STATMENT_INDEX = FALSE;
+        size_t CODE_INDEX;
 
+        unsigned long INSTRUCTION;
+        unsigned long OPERAND_1;
+        unsigned long OPERAND_2;
 
-
-size_t CODE_INDEX;
-unsigned char INSTRUCTION;
-unsigned long OPERAND_1;
-unsigned long OPERAND_2;
-
-
-
-void EXIT_INSTRUCTION();
-
-void RETURN_INSTRUCTION();
-
-void END_INSTRUCTION();
-
-void JUMP_INSTRUCTION();
-
-void SKIP_INSTRUCTION();
-
-void SET_INSTRUCTION();
-
-void SETMODE_INSTRUCTION();
-
-void MATH_INSTRUCTION();
-
-void CMP_INTRUCTION();
-
-void PUSH_INSTRUCTION();
-
-void POP_INSTRUCTION();
-
-void LOADMODE_INSTRUCTION();
-
-void LOAD_INSTRUCTION();
+//
 
 
-void JRM_LOG_ERROR(const char* MESSAGE);
+// [INSTRUCTIONS DECLERATION]
+//
+        void EXIT_INSTRUCTION();
 
-void LOG_PRELOAD_ERROR(const char* MESSAGE);
+        void RETURN_INSTRUCTION();
+
+        void END_INSTRUCTION();
+
+        void JUMP_INSTRUCTION();
+
+        void SKIP_INSTRUCTION();
+
+        void SET_INSTRUCTION();
+
+        void SETMODE_INSTRUCTION();
+
+        void ADD_INSTRUCTION();
+
+        void SUB_INSTRUCTION();
+
+        void MUL_INSTRUCTION();
+
+        void DIV_INSTRUCTION();
+
+        void CMPE_INSTRUCTION();
+
+        void CMPH_INSTRUCTION();
+
+        void CMPL_INSTRUCTION();
+
+        void CMPHE_INSTRUCTION();
+
+        void CMPLE_INSTRUCTION();
+
+        void PUSH_INSTRUCTION();
+
+        void POP_INSTRUCTION();
+
+        void LOAD_INSTRUCTION();
+
+//
 
 
-
-typedef void (*INSTRUCTION_FUNCTIONS)(void);
-
-
-
-
-
-
-INSTRUCTION_FUNCTIONS INSTRUCTION_LIST[] =
+void (*INSTRUCTION_LIST[])(void) =
 {
 
         EXIT_INSTRUCTION,
@@ -87,15 +92,15 @@ INSTRUCTION_FUNCTIONS INSTRUCTION_LIST[] =
         SKIP_INSTRUCTION,
         SETMODE_INSTRUCTION,
         SET_INSTRUCTION,
-        MATH_INSTRUCTION,
-        MATH_INSTRUCTION,
-        MATH_INSTRUCTION,
-        MATH_INSTRUCTION,
-        CMP_INTRUCTION,
-        CMP_INTRUCTION,
-        CMP_INTRUCTION,
-        CMP_INTRUCTION,
-        CMP_INTRUCTION,
+        ADD_INSTRUCTION,
+        SUB_INSTRUCTION,
+        MUL_INSTRUCTION,
+        DIV_INSTRUCTION,
+        CMPE_INSTRUCTION,
+        CMPH_INSTRUCTION,
+        CMPL_INSTRUCTION,
+        CMPHE_INSTRUCTION,
+        CMPLE_INSTRUCTION,
         PUSH_INSTRUCTION,
         POP_INSTRUCTION,
         LOAD_INSTRUCTION,
@@ -104,10 +109,15 @@ INSTRUCTION_FUNCTIONS INSTRUCTION_LIST[] =
 
 
 
+
+void JRM_LOG_ERROR(const char* MESSAGE);
+
+void LOG_PRELOAD_ERROR(const char* MESSAGE);
+
 int JRM__INIT(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB);
 
-
 void JSM__EXIT();
+
 
 
 
@@ -187,7 +197,6 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
         return JSM_OK;
 
 }
-
 
 
 int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB)
@@ -276,6 +285,7 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
                 IS_RUNTIME_ERROR = FALSE;
                 EXIT_REQUESTED = FALSE;
 
+                CODE_INDEX = 0;
                 JSM_CURRENT_SOC = 1;
 
         }
@@ -300,7 +310,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         }
 
 
-        for (CODE_INDEX = 0; ; )
+        while (TRUE)
         {
 
                 BYTECODE_STATEMENT = (char*)(CODE + CODE_INDEX);
@@ -314,9 +324,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                         // [WRITE BOTH OPERANDS]
                         {
-
-                                unsigned char USIGNED_LONG_SIZE = sizeof(unsigned long);
-
 
                                 OPERAND_1 = *((unsigned long*)&(CODE[CODE_INDEX + 3]));
                                 OPERAND_2 = *((unsigned long*)&(CODE[CODE_INDEX + 11]));
@@ -343,11 +350,15 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                 }
 
 
+                // [INCREMENT]
+                {
 
-                CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 19;
+                        CODE_INDEX += (!DO_NOT_INCREMENT_STATMENT_INDEX) * 19;
 
 
-                JSM_CURRENT_SOC ++;
+                        JSM_CURRENT_SOC ++;
+
+                }
 
         }
 
@@ -391,7 +402,7 @@ void JSM__EXIT()
                 else
                 {
 
-                        printf("PROGRAM EXITED WITH CODE %d", EXIT_CODE);
+                        printf("PROGRAM EXITED WITH CODE %ld", EXIT_CODE);
 
                 }
 
@@ -412,32 +423,77 @@ void EXIT_INSTRUCTION()
 }
 
 
-void CMP_INTRUCTION()
+void CMPE_INSTRUCTION()
 {
-
-        char CONDITION;
-
 
         CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
         CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
-        switch (INSTRUCTION)
-        {
+        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
-                case CMPE: CONDITION = (OPERAND_1 == OPERAND_2); break;
-                case CMPH: CONDITION = (OPERAND_1 > OPERAND_2); break;
-                case CMPL: CONDITION = (OPERAND_1 < OPERAND_2); break;
-                case CMPHE: CONDITION = (OPERAND_1 >= OPERAND_2); break;
-                case CMPLE: CONDITION = (OPERAND_1 <= OPERAND_2); break;
 
-        }
+        CODE_INDEX += 19 + (19 * (!(OPERAND_1 == OPERAND_2)));
+
+}
+
+
+void CMPH_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
         DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
 
 
-        CODE_INDEX += 19 + (19 * (!CONDITION));
+        CODE_INDEX += 19 + (19 * (!(OPERAND_1 > OPERAND_2)));
+
+}
+
+
+void CMPL_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+
+
+        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+
+
+        CODE_INDEX += 19 + (19 * (!(OPERAND_1 < OPERAND_2)));
+
+}
+
+
+void CMPHE_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+
+
+        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+
+
+        CODE_INDEX += 19 + (19 * (!(OPERAND_1 >= OPERAND_2)));
+
+}
+
+
+void CMPLE_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_1, 1);
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+
+
+        DO_NOT_INCREMENT_STATMENT_INDEX = TRUE;
+
+
+        CODE_INDEX += 19 + (19 * (!(OPERAND_1 <= OPERAND_2)));
 
 }
 
@@ -536,18 +592,6 @@ void POP_INSTRUCTION()
 }
 
 
-void LOADMODE_INSTRUCTION()
-{
-
-        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
-
-
-        REGISTER_LIST[RLA] = OPERAND_1;
-        REGISTER_LIST[RLP] = OPERAND_2;
-
-}
-
-
 void LOAD_INSTRUCTION()
 {
 
@@ -573,27 +617,46 @@ void SETMODE_INSTRUCTION()
 }
 
 
-void MATH_INSTRUCTION()
+void ADD_INSTRUCTION()
 {
 
         CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
 
-        unsigned long* REGISTER = &REGISTER_LIST[OPERAND_1];
+        REGISTER_LIST[OPERAND_1] += OPERAND_2;
+
+}
 
 
-        switch (INSTRUCTION)
-        {
+void SUB_INSTRUCTION()
+{
 
-                case ADD: *REGISTER += OPERAND_2; break;
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
 
-                case SUB: *REGISTER -= OPERAND_2; break;
 
-                case MUL: *REGISTER *= OPERAND_2; break;
+        REGISTER_LIST[OPERAND_1] -= OPERAND_2;
 
-                case DIV: *REGISTER /= OPERAND_2; break;
+}
 
-        }
+
+void MUL_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+
+
+        REGISTER_LIST[OPERAND_1] *= OPERAND_2;
+
+}
+
+
+void DIV_INSTRUCTION()
+{
+
+        CAST_OPERAND_TO_TYPE(OPERAND_2, 2);
+
+
+        REGISTER_LIST[OPERAND_1] /= OPERAND_2;
 
 }
 

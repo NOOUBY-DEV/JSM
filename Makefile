@@ -1,4 +1,6 @@
 C_FLAGS = -I./JSM
+GCC_FLAGS = -g
+#-O3 -march=native
 OUTPUT_FOLDER = NOOUBYS_OUTPUT
 JSM_SOURCE_FILES = $(shell find JSM -name "*.c")
 
@@ -8,7 +10,7 @@ JSM_SOURCE_FILES = $(shell find JSM -name "*.c")
 
 TEST_1_CFILE = TEST/TEST.c
 TEST_1: $(TEST_1_CFILE)
-	gcc -g $(JSM_SOURCE_FILES) $(TEST_1_CFILE) $(C_FLAGS) -o $(OUTPUT_FOLDER)/TEST
+	gcc $(GCC_FLAGS) $(JSM_SOURCE_FILES) $(TEST_1_CFILE) $(C_FLAGS) -o $(OUTPUT_FOLDER)/TEST
 
 
 

@@ -25,7 +25,7 @@ int main()
         // [GET .jsm FILE AND COMPILE]
         {
 
-                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/EXAMPLE.jsm", &JSMCODE_SIZE, &JSMCODE);
+                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/STACK_TEST.jsm", &JSMCODE_SIZE, &JSMCODE);
 
 
                 if (OPEN_STATUS == 0)
@@ -71,7 +71,7 @@ int main()
 
 
                 printf("\n\n");
-                printf("IN T1 T2         OPR1                   OPR2\n");
+                printf("IN T1 T2           OPR1                   OPR2\n");
                 printf("┌┐ ┌┐ ┌┐ ┌─────────────────────┐ ┌─────────────────────┐\n");
 
 
