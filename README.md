@@ -1,22 +1,27 @@
 # JSM
 
-## The JEZSEMBLY language runtime machine and compiler
+![C](https://img.shields.io/badge/-00599C?logo=c&logoColor=white&style=plastic)
+![JSM](https://img.shields.io/badge/JSM-red?&style=plastic)
 
-
-Its getting late but ill introduce this better tmr, sorry fellows
-
-
-I wanted to make a stack based ASM like language that can be compiled from a higher level language, and be compiled to bytecode
-When it runs, instruction is directly executed in O(1) complexity
-
-
-for now, the compiler is fully working, so you guys can check that out first, but the rumtime machine is still unsafe, ill keep working on it tmr
 
 
 <br>
 
 
-#### But here's an example of how jsm works, you can compile it 
+## The JSM language JRM and compiler
+
+
+- Written in **C**
+- **Register** and **stack** based language
+- Memory lightweight JRM
+- Direct low level access
+- Extremely portable
+
+
+<br>
+
+
+#### Here's an example of how JSM works, you can compile and run it
 
 
 ```JSM
@@ -47,7 +52,7 @@ ADD RG2 9;          // AFTER SKIP, WE WANT TO ADD RG2 BY 9
 }
 
 
-EXIT 0;               // REMEMBER TO EXIT PROPERLY, OTHERWISE THE JRM WILL GIVE A WARNING
+EXIT 0;             // REMEMBER TO EXIT PROPERLY, OTHERWISE THE JRM WILL GIVE A WARNING
 
 
 // ALWAYS END BEFORE THE STATIC DATA, OTHERWISE THE COMPILER WILL THROW AN ERROR!\0
