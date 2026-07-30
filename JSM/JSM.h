@@ -43,7 +43,6 @@ enum INTRUCTIONS_ENUM
         PUSH,
         POP,
         LOAD,
-        SYSCALL,
 
 };
 
