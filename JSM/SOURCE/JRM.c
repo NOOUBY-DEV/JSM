@@ -1,8 +1,4 @@
 #include "../JSM.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
-#include <time.h>
 
 
 
@@ -34,7 +30,7 @@ typedef struct JRM_DATA
 
         unsigned long EXIT_CODE;
 
-        unsigned long EXIT_REQUESTED;
+        unsigned long NOT_EXIT_REQUESTED;
         unsigned long INCREMENT_STATMENT_INDEX;
 
 }
@@ -291,7 +287,7 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
         // [SET / RESET RUNTIME DATA]
         {
 
-                JRM.EXIT_REQUESTED = FALSE;
+                JRM.NOT_EXIT_REQUESTED = TRUE;
                 JRM.INCREMENT_STATMENT_INDEX = TRUE;
 
                 JRM.CODE_INDEX = 0;
@@ -319,7 +315,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         }
 
 
-        while (!JRM.EXIT_REQUESTED)
+        while (JRM.NOT_EXIT_REQUESTED)
         {
 
                 // [EXECUTE INSTRUCTION]
@@ -425,7 +421,7 @@ void JSM__EXIT()
 void EXIT_INSTRUCTION()
 {
 
-        JRM.EXIT_REQUESTED = TRUE;
+        JRM.NOT_EXIT_REQUESTED = FALSE;
         JRM.EXIT_CODE = JRM.OPERAND_1;
 
 }
@@ -528,7 +524,7 @@ void SKIP_INSTRUCTION()
 void END_INSTRUCTION()
 {
 
-        JRM.EXIT_REQUESTED = TRUE;
+        JRM.NOT_EXIT_REQUESTED = FALSE;
         JRM.EXIT_CODE = 3;
 
 }
@@ -552,7 +548,7 @@ void JUMP_INSTRUCTION()
         {
 
                 JRM.EXIT_CODE = 4;
-                JRM.EXIT_REQUESTED = TRUE;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
                 return;
@@ -581,7 +577,7 @@ void PUSH_INSTRUCTION()
         {
 
                 JRM.EXIT_CODE = 11;
-                JRM.EXIT_REQUESTED = TRUE;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
                 return;
@@ -622,7 +618,7 @@ void POP_INSTRUCTION()
         {
 
                 JRM.EXIT_CODE = 11;
-                JRM.EXIT_REQUESTED = TRUE;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
                 return;
