@@ -44,6 +44,7 @@ enum INTRUCTIONS_ENUM
         PUSH,
         POP,
         LOAD,
+        WRITE,
 
 };
 
@@ -56,8 +57,9 @@ enum REGISTERS_ENUM
         RDP,
         RDB,
         RLA,
+        RWA,
         RLP,
-        RRA,
+        RRS,
         RRV,
         RSM,
         RS1,

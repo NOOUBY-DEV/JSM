@@ -1,4 +1,6 @@
 #include "../JSM.h"
+#include <stdio.h>
+#include <string.h>
 
 
 
@@ -79,6 +81,8 @@ JRM_DATA JRM;
 
         void LOAD_INSTRUCTION();
 
+        void WRITE_INSTRUCTION();
+
 //
 
 
@@ -103,6 +107,7 @@ static void (*INSTRUCTION_LIST[])(void) =
         PUSH_INSTRUCTION,
         POP_INSTRUCTION,
         LOAD_INSTRUCTION,
+        WRITE_INSTRUCTION
 
 };
 
@@ -422,7 +427,7 @@ void EXIT_INSTRUCTION()
 {
 
         JRM.NOT_EXIT_REQUESTED = FALSE;
-        JRM.EXIT_CODE = JRM.OPERAND_1;
+        JRM.EXIT_CODE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 }
 
@@ -482,7 +487,7 @@ void CMPHE_INSTRUCTION()
         JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 < OPERAND_2));
+        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * !(OPERAND_1 >= OPERAND_2));
 
 }
 
@@ -505,7 +510,7 @@ void CMPLE_INSTRUCTION()
 void RETURN_INSTRUCTION()
 {
 
-        JRM.CODE_INDEX = JRM.REGISTER_LIST[RRA] * BYTECODE_STATEMENT_SIZE;
+        JRM.CODE_INDEX = JRM.REGISTER_LIST[RRS] * BYTECODE_STATEMENT_SIZE;
 
 
         JRM.INCREMENT_STATMENT_INDEX = FALSE;
@@ -653,16 +658,63 @@ void POP_INSTRUCTION()
 void LOAD_INSTRUCTION()
 {
 
-        const unsigned long LOAD_SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long CURRENT_RLA = JRM.REGISTER_LIST[RLA];
 
 
-        // !========================== [NOT DONE] ==========================!
-        for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
+        if (CURRENT_RLA >= JRM.MEMORY_SPACE_SIZE)
         {
 
-                CHAR_PTR_CAST(JRM.REGISTER_LIST[JRM.OPERAND_1])[INDEX] = JRM.MEMORY_SPACE[INDEX + JRM.REGISTER_LIST[RLA]];
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
 
         }
+
+
+        #if !defined (RAW_JRM)
+
+                memcpy(JRM.REGISTER_LIST + JRM.OPERAND_1, JRM.MEMORY_SPACE + CURRENT_RLA, CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+        #else
+
+                // [TODO : ADD RAW ITERATION]
+
+        #endif
+
+}
+
+
+void WRITE_INSTRUCTION()
+{
+
+        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        const unsigned long CURRENT_RWA = JRM.REGISTER_LIST[RWA];
+        const unsigned long WRITE_SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        if (CURRENT_RWA + WRITE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        #if !defined (RAW_JRM)
+
+                memcpy(JRM.MEMORY_SPACE + CURRENT_RWA, &WRITE_VALUE, WRITE_SIZE);
+
+        #else
+
+                // [TODO : ADD RAW ITERATION]
+
+        #endif
 
 }
 

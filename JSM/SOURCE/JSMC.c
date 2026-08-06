@@ -45,6 +45,7 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"PUSH", 2},
         {"POP", 2},
         {"LOAD", 2},
+        {"WRITE", 2},
         {NULL, NONE}
 
 
@@ -59,9 +60,10 @@ const char* REGISTER_STRINGS[] =
         "RDP",
         "RDB",
         "RLA",
+        "RWA",
         "RLP",
         "RRA",
-        "RRV",
+        "RRS",
         "RSM",
         "RS1",
         "RS2",
