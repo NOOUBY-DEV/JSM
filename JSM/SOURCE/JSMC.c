@@ -46,6 +46,7 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"POP", 2},
         {"LOAD", 2},
         {"WRITE", 2},
+        {"JRMCALL", 0},
         {NULL, NONE}
 
 
@@ -77,6 +78,10 @@ const char* REGISTER_STRINGS[] =
         "RG7",
         "RG8",
         "RG9",
+        "RJM",
+        "RJ1",
+        "RJ2",
+        "RJ3",
         NULL
 
 };
@@ -142,7 +147,7 @@ int MODE;
 
 
 
-void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size_t STATEMENT_LENGTH, char* BYTECODE_STATEMENT);
+void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size_t STATEMENT_LENGTH, char* BYTECODE_STATEMENT, unsigned long* TOKEN_COUNT);
 
 
 void APPEND__STATEMENT_TO_BYTECODE(char* BYTECODE, const size_t STARTING_INDEX, const char* STATEMENT);
@@ -179,131 +184,15 @@ void CHECK_SPECIAL_CASE(char* BYTECODE_STATEMENT);
 int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE)
 {
 
-        MODE = SIZE_CHECK_MODE;
-        IS_JSMC_ERROR = FALSE;
+        const int STATUS = JSM__COMPILE_TO_BYTECODE(FALSE, JSMCODE, NULL, JSMCODE_SIZE, BYTECODE_SIZE);
 
 
-        char BYTECODE_STATEMENT[BYTECODE_STATEMENT_SIZE];
-        BYTECODE_STATEMENT[0] = 0;
-        size_t JSMCODE_INDEX = 0;
-        size_t BYTECODE_INDEX = 0;
-        JSMC_CURRENT_SOC = 1;
-
-
-
-        for (; JSMCODE_INDEX < JSMCODE_SIZE; JSMCODE_INDEX ++)
+        if (STATUS == JSM_ERROR)
         {
-
-                if (JSMCODE[JSMCODE_INDEX] == '\n')
-                {
-
-                        continue;
-
-                }
-
-
-                size_t STATEMENT_LENGTH = 0;
-                size_t INDEX = JSMCODE_INDEX;
-
-
-                // [FIND STATEMENT LENGTH]
-                {
-
-                        for (; JSMCODE[INDEX] != ';' && INDEX < JSMCODE_SIZE; )
-                        {
-
-                                if (JSMCODE[INDEX] == '/' && JSMCODE[INDEX + 1] == '/')
-                                {
-
-                                        for (; JSMCODE[INDEX] != '\n' && INDEX < JSMCODE_SIZE; INDEX ++, STATEMENT_LENGTH ++);
-
-                                }
-                                else
-                                {
-
-                                        INDEX ++;
-
-                                        STATEMENT_LENGTH ++;
-
-                                }
-
-                        }
-
-                }
-
-
-                if (INDEX >= JSMCODE_SIZE)
-                {
-
-                        JSMCODE_INDEX += STATEMENT_LENGTH;
-
-
-                        break;
-
-                }
-
-
-                // [COMPILE AND ADD STATEMENT]
-                {
-
-                        GET__JSM_STATEMENT__IN__BYTECODE(JSMCODE, JSMCODE_INDEX, STATEMENT_LENGTH, BYTECODE_STATEMENT);
-
-
-                        if (IS_JSMC_ERROR)
-                        {
-
-                                printf("\n\033[1;31m[JSMC SIZE CHECK FAILED.]\033[0m\n\n");
-
-
-                                return JSM_ERROR;
-
-                        }
-
-                }
-
-
-                // [INCREMENT NUMBERS]
-                {
-
-                        JSMCODE_INDEX += STATEMENT_LENGTH;
-
-
-                        JSMC_CURRENT_SOC ++;
-
-
-                        BYTECODE_INDEX += BYTECODE_STATEMENT_SIZE;
-
-                }
-
-
-                if (BYTECODE_STATEMENT[0] == END)
-                {
-
-                        break;
-
-                }
-
-        }
-
-
-        if (JSMCODE_INDEX >= JSMCODE_SIZE)
-        {
-
-                JSMC_LOG_COMPILE_ERROR("MISSING END; STATEMENT");
-
-
-                printf("\n\033[1;31m[JSMC SIZE CHECK FAILED.]\033[0m\n\n");
-
 
                 return JSM_ERROR;
 
         }
-
-
-        PARSE_JSMCODE_DATA_TO_BYTECODE(JSMCODE, JSMCODE_SIZE, NULL, &JSMCODE_INDEX, &BYTECODE_INDEX);
-
-
-        *BYTECODE_SIZE = BYTECODE_INDEX;
 
 
         return JSM_OK;
@@ -311,10 +200,10 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_SIZE, size_t* B
 }
 
 
-int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE)
+int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE)
 {
 
-        MODE = COMPILE_MODE;
+        MODE = IS_COMPILE_MODE;
         IS_JSMC_ERROR = FALSE;
         char BYTECODE_STATEMENT[BYTECODE_STATEMENT_SIZE];
         BYTECODE_STATEMENT[0] = 0;
@@ -324,7 +213,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 
 
 
-        for (; JSMCODE_INDEX < JSMCODE_SIZE; JSMCODE_INDEX ++)
+        for (; IS_COMPILE_MODE ? (JSMCODE_INDEX < JSMCODE_SIZE) : 1; JSMCODE_INDEX ++)
         {
 
                 if (JSMCODE[JSMCODE_INDEX] == '\n')
@@ -337,6 +226,7 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
 
                 size_t INDEX = JSMCODE_INDEX;
                 size_t STATEMENT_LENGTH = 0;
+                unsigned long TOKEN_COUNT;
 
 
 
@@ -381,13 +271,24 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                 // [COMPILE AND ADD STATEMENT]
                 {
 
-                        GET__JSM_STATEMENT__IN__BYTECODE(JSMCODE, JSMCODE_INDEX, STATEMENT_LENGTH, BYTECODE_STATEMENT);
+                        GET__JSM_STATEMENT__IN__BYTECODE(JSMCODE, JSMCODE_INDEX, STATEMENT_LENGTH, BYTECODE_STATEMENT, &TOKEN_COUNT);
 
 
                         if (IS_JSMC_ERROR)
                         {
 
-                                printf("\n\033[1;31m[JSMC COMPILATION FAILED.]\033[0m\n\n");
+                                if (IS_COMPILE_MODE)
+                                {
+
+                                        printf("\n\033[1;31m[JSMC COMPILATION FAILED.]\033[0m\n\n");
+
+                                }
+                                else
+                                {
+
+                                        printf("\n\033[1;31m[JSMC SIZE CHECK FAILED.]\033[0m\n\n");
+
+                                }
 
 
                                 return JSM_ERROR;
@@ -395,7 +296,12 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                         }
 
 
-                        APPEND__STATEMENT_TO_BYTECODE(BYTECODE, BYTECODE_INDEX, BYTECODE_STATEMENT);
+                        if (IS_COMPILE_MODE && TOKEN_COUNT != 0)
+                        {
+
+                                APPEND__STATEMENT_TO_BYTECODE(BYTECODE, BYTECODE_INDEX, BYTECODE_STATEMENT);
+
+                        }
 
                 }
 
@@ -406,10 +312,18 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                         JSMCODE_INDEX += STATEMENT_LENGTH;
 
 
-                        JSMC_CURRENT_SOC ++;
+                        if (TOKEN_COUNT != 0)
+                        {
+
+                        	JSMC_CURRENT_SOC ++;
 
 
-                        BYTECODE_INDEX += BYTECODE_STATEMENT_SIZE;
+	                       	BYTECODE_INDEX += BYTECODE_STATEMENT_SIZE;
+
+
+	                        *BYTECODE_SIZE += BYTECODE_STATEMENT_SIZE;
+
+                        }
 
                 }
 
@@ -430,7 +344,18 @@ int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE
                 JSMC_LOG_COMPILE_ERROR("MISSING END; STATEMENT");
 
 
-                printf("\n\033[1;31m[JSMC COMPILATION FAILED.]\033[0m\n\n");
+                if (IS_COMPILE_MODE)
+                {
+
+                        printf("\n\033[1;31m[JSMC COMPILATION FAILED.]\033[0m\n\n");
+
+                }
+                else
+                {
+
+                        printf("\n\033[1;31m[JSMC SIZE CHECK FAILED.]\033[0m\n\n");
+
+                }
 
 
                 return JSM_ERROR;
@@ -629,13 +554,13 @@ void PARSE_JSMCODE_DATA_TO_BYTECODE(char* JSMCODE, const size_t JSMCODE_SIZE, ch
 }
 
 
-void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size_t STATEMENT_LENGTH, char* BYTECODE_STATEMENT)
+void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size_t STATEMENT_LENGTH, char* BYTECODE_STATEMENT, unsigned long* TOKEN_COUNT)
 {
 
         #define IS_SPACED_CHAR(INDEX) (JSMCODE[INDEX] == ' ' || JSMCODE[INDEX] == '\n' ||  JSMCODE[INDEX] == '\t')
 
         const size_t ENDING_LENGTH = STARTING_INDEX + STATEMENT_LENGTH;
-        unsigned char TOKEN_COUNT = 0;
+        *TOKEN_COUNT = 0;
         unsigned char INSTRUCTION_INDEX = 0;
 
 
@@ -650,7 +575,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
         for (size_t JSMCODE_INDEX = STARTING_INDEX; JSMCODE_INDEX < ENDING_LENGTH; JSMCODE_INDEX ++)
         {
 
-                if (TOKEN_COUNT >= 3)
+                if (*TOKEN_COUNT >= 3)
                 {
 
                         JSMC_LOG_COMPILE_ERROR("MISSING ';' OR MORE THAN 2 OPERANDS");
@@ -681,7 +606,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
 
 
                 char* TOKEN = JSMCODE + JSMCODE_INDEX;
-                TOKEN_COUNT ++;
+                (*TOKEN_COUNT) ++;
                 size_t TOKEN_LENGTH = 0;
 
 
@@ -699,7 +624,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
                 }
 
 
-                if (TOKEN_COUNT == 1)
+                if (*TOKEN_COUNT == 1)
                 // [SET INSTRUCTION VALUE]
                 {
 
@@ -717,7 +642,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
                         }
 
                 }
-                else if (TOKEN_COUNT > INSTRUCTION_STRINGS_LIST[INSTRUCTION_INDEX].REQUIRED_OPERANDS + 1)
+                else if (*TOKEN_COUNT > INSTRUCTION_STRINGS_LIST[INSTRUCTION_INDEX].REQUIRED_OPERANDS + 1)
                 {
 
                         JSMC_LOG_COMPILE_ERROR("TOO MANY OPERANDS FOR INSTRUCTION");
@@ -745,11 +670,11 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
                         }
 
 
-                        BYTECODE_STATEMENT[TOKEN_COUNT - 1] = OPERAND_TYPE;
+                        BYTECODE_STATEMENT[*TOKEN_COUNT - 1] = OPERAND_TYPE;
 
 
                         char* OPERAND_VALUE_BYTES = (char*)&OPERAND_VALUE;
-                        size_t BYTECODE_OPERAND_INDEX = (TOKEN_COUNT == 2) ? 8 : 16;
+                        size_t BYTECODE_OPERAND_INDEX = (*TOKEN_COUNT == 2) ? 8 : 16;
 
 
                         for (unsigned short INDEX = 0; INDEX < 8; INDEX ++)
@@ -767,7 +692,7 @@ void GET__JSM_STATEMENT__IN__BYTECODE(char* JSMCODE, size_t STARTING_INDEX, size
         }
 
 
-        if (TOKEN_COUNT >= 1 && TOKEN_COUNT - 1 < INSTRUCTION_STRINGS_LIST[INSTRUCTION_INDEX].REQUIRED_OPERANDS)
+        if (*TOKEN_COUNT >= 1 && *TOKEN_COUNT - 1 < INSTRUCTION_STRINGS_LIST[INSTRUCTION_INDEX].REQUIRED_OPERANDS)
         {
 
                 JSMC_LOG_COMPILE_ERROR("TOO FEW OPERANDS FOR INSTRUCTION");
@@ -846,7 +771,7 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, un
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, REGISTER_STRINGS[INDEX]))
                 {
 
-                        *OPERAND_TYPE |= (REG << OPERAND_1_TYPE_INDEX);
+                        *OPERAND_TYPE = REG;
 
 
                         return INDEX;
@@ -864,7 +789,7 @@ unsigned long GET_OPERAND_VALUE(const char* TOKEN, const size_t TOKEN_LENGTH, un
                 if (TOKEN_EQUALS(TOKEN, TOKEN_LENGTH, CURRENT_MACRO__STRING_TO_VALUE.STRING))
                 {
 
-                        *OPERAND_TYPE |= (REG << OPERAND_1_TYPE_INDEX);
+                        *OPERAND_TYPE = REG;
 
 
                         return CURRENT_MACRO__STRING_TO_VALUE.VALUE;

@@ -83,6 +83,8 @@ JRM_DATA JRM;
 
         void WRITE_INSTRUCTION();
 
+        void JRMCALL_INSTRUCTION();
+
 //
 
 
@@ -107,7 +109,8 @@ static void (*INSTRUCTION_LIST[])(void) =
         PUSH_INSTRUCTION,
         POP_INSTRUCTION,
         LOAD_INSTRUCTION,
-        WRITE_INSTRUCTION
+        WRITE_INSTRUCTION,
+        JRMCALL_INSTRUCTION
 
 };
 
@@ -759,6 +762,108 @@ void DIV_INSTRUCTION()
 
 
         JRM.REGISTER_LIST[JRM.OPERAND_1] /= VALUE;
+
+}
+
+
+void JRMCALL_INSTRUCTION()
+{
+
+        const unsigned long CURRENT_RJM = JRM.REGISTER_LIST[RJM];
+
+
+        switch (CURRENT_RJM)
+        {
+
+                case (1) : goto PRINT;
+                default : return;
+
+        }
+
+
+        PRINT:
+        {
+
+                long VALID = TRUE;
+
+
+                const unsigned long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
+                unsigned long PRINT_LENGTH = JRM.REGISTER_LIST[RJ2];
+
+
+
+                if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE)
+                {
+
+                        JRM.EXIT_CODE = 11;
+                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+                        return;
+
+                }
+
+
+                if (PRINT_LENGTH == 0)
+                {
+
+                        size_t INDEX;
+
+
+                        for (INDEX = STARTING_INDEX; JRM.MEMORY_SPACE[INDEX] != '\0' && INDEX < JRM.MEMORY_SPACE_SIZE; INDEX ++, PRINT_LENGTH ++);
+
+
+                        if (INDEX == JRM.MEMORY_SPACE_SIZE)
+                        {
+
+                                VALID = FALSE;
+
+                        }
+
+                }
+                else
+                {
+
+                        if (STARTING_INDEX + JRM.REGISTER_LIST[RJ2] >= JRM.MEMORY_SPACE_SIZE)
+                        {
+
+                                VALID = FALSE;
+
+                        }
+
+                }
+
+
+                if (!VALID)
+                {
+
+                        JRM.EXIT_CODE = 11;
+                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+                        return;
+
+                }
+
+
+                // [PRINT STRING]
+                {
+
+                        const size_t LAST_CHAR_INDEX = STARTING_INDEX + PRINT_LENGTH;
+
+                        const char LAST_CHAR = JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ];
+
+
+                        JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = '\0';
+
+                        printf("%s", JRM.MEMORY_SPACE + STARTING_INDEX);
+
+                        JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = LAST_CHAR;
+
+                }
+
+
+                return;
+
+        }
 
 }
 

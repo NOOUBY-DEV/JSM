@@ -45,6 +45,7 @@ enum INTRUCTIONS_ENUM
         POP,
         LOAD,
         WRITE,
+        JRMCALL
 
 };
 
@@ -74,6 +75,10 @@ enum REGISTERS_ENUM
         RG7,
         RG8,
         RG9,
+        RJM,
+        RJ1,
+        RJ2,
+        RJ3
 
 };
 
@@ -92,7 +97,7 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
 int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE);
 
 
-int JSM__COMPILE_TO_BYTECODE(char* JSMCODE, char* BYTECODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE);
+int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE);
 
 
 int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB);
