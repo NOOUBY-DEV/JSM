@@ -9,7 +9,7 @@
 <br>
 
 
-## The JSM language JRM and compiler
+## The JSM language JRM and assembler
 
 
 - Written in **C**
@@ -20,6 +20,9 @@
 
 
 <br>
+
+
+---
 
 
 #### Here's an example of how JSM works, you can compile and run it
@@ -72,7 +75,43 @@ ANY NEWLINE AND 	TAB CHARACTER IS DISCARED\0
 
 #### When compiled, the final bytecode can be visualized like this
 
-<img width="810" height="675" alt="image" src="https://github.com/user-attachments/assets/5dd861eb-afda-457f-80dc-868723d328b3" />
+<img width="809" height="622" alt="2026-08-07-173533_hyprshot" src="https://github.com/user-attachments/assets/d6d1d164-406e-4bc7-aee8-acfe6b846c4d" />
 
 
+---
+
+#### simple hello world program
+
+
+```JSM
+
+SET RJM 1;
+SET RJ1 RDP;
+SET RJ2 0;
+JRMCALL;
+EXIT 0;
+END;
+HELLO, WORLD!\n\0
+
+```
+
+#### with explaination
+
+
+```JSM
+
+SET RJM 1;         // SET THE JRMCALL TO PRINT MODE
+SET RJ1 RDP;       // SET THE 1ST ARGUMENT TO THE STATIC DATA POINTER
+SET RJ2 0;         // THE STRING IS NULL TERMINATED, SO THE LENGTH CAN BE 0
+JRMCALL;           // JRMCALL IG
+EXIT 0;            // EXIT WITH CODE 0
+                   // AFTER END, BELOW IS THE STATIC DATA CONTAINING THE HELLO WORLD STRING
+END;
+HELLO, WORLD!\n\0
+
+```
+
+#### final output and bytecode visualization 
+
+<img width="813" height="419" alt="image" src="https://github.com/user-attachments/assets/923bfd5e-193b-460c-989a-fa0dca3aba3c" />
 
