@@ -97,6 +97,32 @@ int main()
                         }
 
 
+
+                        if (WAITING_FOR_END)
+                        {
+
+                       		const size_t REMAINDER = INDEX % BYTECODE_STATEMENT_SIZE;
+
+
+	                       	if (REMAINDER == 1 || REMAINDER == 2)
+	                        {
+
+	                        	printf("\033[92m");
+
+	                        }
+
+
+				if (REMAINDER > 2 && REMAINDER < 8)
+				{
+
+					printf("\033[37m");
+
+				}
+
+                        }
+
+
+
                         printf("%02x ", CHAR);
 
 
@@ -161,6 +187,9 @@ int main()
 
         free(JSMCODE);
         free(BYTECODE);
+
+
+        printf("\n");
 
 
         return 0;

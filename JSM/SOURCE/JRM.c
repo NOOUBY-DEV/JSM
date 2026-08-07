@@ -823,7 +823,7 @@ void JRMCALL_INSTRUCTION()
                 else
                 {
 
-                        if (STARTING_INDEX + JRM.REGISTER_LIST[RJ2] >= JRM.MEMORY_SPACE_SIZE)
+                        if (STARTING_INDEX + PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE)
                         {
 
                                 VALID = FALSE;
