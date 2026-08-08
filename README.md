@@ -75,7 +75,8 @@ ANY NEWLINE AND 	TAB CHARACTER IS DISCARED\0
 
 #### When compiled, the final bytecode can be visualized like this
 
-<img width="809" height="622" alt="2026-08-07-173533_hyprshot" src="https://github.com/user-attachments/assets/d6d1d164-406e-4bc7-aee8-acfe6b846c4d" />
+<img width="811" height="604" alt="image" src="https://github.com/user-attachments/assets/f5a79b45-435b-4b66-9782-01d0f482db9a" />
+
 
 
 ---
@@ -113,4 +114,5 @@ HELLO, WORLD!\n\0
 
 #### final output and bytecode visualization 
 
-<img width="813" height="419" alt="image" src="https://github.com/user-attachments/assets/923bfd5e-193b-460c-989a-fa0dca3aba3c" />
+<img width="812" height="413" alt="image" src="https://github.com/user-attachments/assets/23cdbbcf-9568-4a94-818c-157dd5f4af58" />
+
