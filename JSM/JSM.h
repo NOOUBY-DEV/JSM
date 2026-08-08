@@ -23,9 +23,8 @@
 
 
 
-enum INTRUCTIONS_ENUM
+enum INSTRUCTIONS_ENUM
 {
-
         EXIT,
         RETURN,
         END,
@@ -43,7 +42,13 @@ enum INTRUCTIONS_ENUM
         CMPHE,
         CMPLE,
         PUSHQ,
+        PUSHD,
+        PUSHW,
+        PUSHB,
         POPQ,
+        POPD,
+        POPW,
+        POPB,
         LOADQ,
         LOADD,
         LOADW,
@@ -54,7 +59,6 @@ enum INTRUCTIONS_ENUM
         WRITEB,
         JRMCALL,
         INSTRUCTION_COUNT
-
 };
 
 

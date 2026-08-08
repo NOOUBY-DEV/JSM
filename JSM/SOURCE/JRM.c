@@ -390,6 +390,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         const unsigned long INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
 
 
+                        if (INSTRUCTION >= INSTRUCTION_COUNT)
+                        {
+
+                                JRM.EXIT_CODE = 7;
+
+
+                                JSM__EXIT();
+
+
+                                return JSM_ERROR;
+                        }
+
+
                         // [WRITE BOTH OPERANDS]
                         {
 
@@ -467,6 +480,12 @@ void JSM__EXIT()
                 {
 
                         printf("PROGRAM EXITED WITH CODE 5 : REGISTER INDEX OUT OF BOUNDS");
+
+                }
+                else if (JRM.EXIT_CODE == 7)
+                {
+
+                        printf("PROGRAM EXITED WITH CODE 7 : INSTRUCTION INDEX OUT OF BOUNDS");
 
                 }
                 else if (JRM.EXIT_CODE == 11)
