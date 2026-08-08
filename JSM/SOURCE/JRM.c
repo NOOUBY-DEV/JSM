@@ -2,7 +2,11 @@
 #include <stdio.h>
 
 
-#define IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER) \
+
+
+#if !defined (UNFETTERED)
+
+        #define IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER) \
         if (REGISTER >= REGISTER_COUNT)\
         {\
                 \
@@ -14,6 +18,11 @@
         \
         }
 
+#else
+
+        #define IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER)
+
+#endif
 
 
 
@@ -390,17 +399,21 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         const unsigned long INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
 
 
-                        if (INSTRUCTION >= INSTRUCTION_COUNT)
-                        {
+                        #if !defined (UNFETTERED)
 
-                                JRM.EXIT_CODE = 7;
+                                if (INSTRUCTION >= INSTRUCTION_COUNT)
+                                {
+
+                                        JRM.EXIT_CODE = 7;
 
 
-                                JSM__EXIT();
+                                        JSM__EXIT();
 
 
-                                return JSM_ERROR;
-                        }
+                                        return JSM_ERROR;
+                                }
+
+                        #endif
 
 
                         // [WRITE BOTH OPERANDS]
@@ -621,36 +634,26 @@ void END_INSTRUCTION()
 }
 
 
-void SET_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
 void JUMP_INSTRUCTION()
 {
 
         const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);;
 
 
-        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
-        {
+        #if !defined (UNFETTERED)
 
-                JRM.EXIT_CODE = 4;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
+                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                {
+
+                        JRM.EXIT_CODE = 4;
+                        JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                return;
+                        return;
 
-        }
+                }
+
+        #endif
 
 
         JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
@@ -1108,6 +1111,20 @@ void WRITEB_INSTRUCTION()
 
 
         JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
+
+}
+
+
+void SET_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 
