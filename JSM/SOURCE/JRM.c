@@ -1,11 +1,30 @@
 #include "../JSM.h"
 #include <stdio.h>
-#include <string.h>
+
+
+#define IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER) \
+        if (REGISTER >= REGISTER_COUNT)\
+        {\
+                \
+                JRM.EXIT_CODE = 5;\
+                JRM.NOT_EXIT_REQUESTED = FALSE;\
+        \
+        \
+                return;\
+        \
+        }
+
 
 
 
 #define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) (*(JRM.MEMORY_SPACE + JRM.CODE_INDEX + NUMBER)) ? JRM.REGISTER_LIST[OPERAND] : OPERAND
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
+
+
+#define QUAD_SIZE sizeof(unsigned long)
+#define DOUBLE_SIZE sizeof(unsigned int)
+#define WORD_SIZE sizeof(unsigned short)
+#define BYTE_SIZE sizeof(unsigned char)
 
 
 
@@ -65,6 +84,8 @@ JRM_DATA JRM;
 
         void DIV_INSTRUCTION();
 
+        void MOD_INSTRUCTION();
+
         void CMPE_INSTRUCTION();
 
         void CMPH_INSTRUCTION();
@@ -75,13 +96,37 @@ JRM_DATA JRM;
 
         void CMPLE_INSTRUCTION();
 
-        void PUSH_INSTRUCTION();
+        void PUSHQ_INSTRUCTION();
 
-        void POP_INSTRUCTION();
+        void PUSHD_INSTRUCTION();
 
-        void LOAD_INSTRUCTION();
+        void PUSHW_INSTRUCTION();
 
-        void WRITE_INSTRUCTION();
+        void PUSHB_INSTRUCTION();
+
+        void POPQ_INSTRUCTION();
+
+        void POPD_INSTRUCTION();
+
+        void POPW_INSTRUCTION();
+
+        void POPB_INSTRUCTION();
+
+        void LOADQ_INSTRUCTION();
+
+        void LOADD_INSTRUCTION();
+
+        void LOADW_INSTRUCTION();
+
+        void LOADB_INSTRUCTION();
+
+        void WRITEQ_INSTRUCTION();
+
+        void WRITED_INSTRUCTION();
+
+        void WRITEW_INSTRUCTION();
+
+        void WRITEB_INSTRUCTION();
 
         void JRMCALL_INSTRUCTION();
 
@@ -101,15 +146,28 @@ static void (*INSTRUCTION_LIST[])(void) =
         SUB_INSTRUCTION,
         MUL_INSTRUCTION,
         DIV_INSTRUCTION,
+        MOD_INSTRUCTION,
         CMPE_INSTRUCTION,
         CMPH_INSTRUCTION,
         CMPL_INSTRUCTION,
         CMPHE_INSTRUCTION,
         CMPLE_INSTRUCTION,
-        PUSH_INSTRUCTION,
-        POP_INSTRUCTION,
-        LOAD_INSTRUCTION,
-        WRITE_INSTRUCTION,
+        PUSHQ_INSTRUCTION,
+        PUSHD_INSTRUCTION,
+        PUSHW_INSTRUCTION,
+        PUSHB_INSTRUCTION,
+        POPQ_INSTRUCTION,
+        POPD_INSTRUCTION,
+        POPW_INSTRUCTION,
+        POPB_INSTRUCTION,
+        LOADQ_INSTRUCTION,
+        LOADD_INSTRUCTION,
+        LOADW_INSTRUCTION,
+        LOADB_INSTRUCTION,
+        WRITEQ_INSTRUCTION,
+        WRITED_INSTRUCTION,
+        WRITEW_INSTRUCTION,
+        WRITEB_INSTRUCTION,
         JRMCALL_INSTRUCTION
 
 };
@@ -405,6 +463,12 @@ void JSM__EXIT()
                         printf("PROGRAM EXITED WITH CODE 4 : STATMENT JUMP OUT OF BOUNDS");
 
                 }
+                else if (JRM.EXIT_CODE == 5)
+                {
+
+                        printf("PROGRAM EXITED WITH CODE 5 : REGISTER INDEX OUT OF BOUNDS");
+
+                }
                 else if (JRM.EXIT_CODE == 11)
                 {
 
@@ -524,7 +588,7 @@ void RETURN_INSTRUCTION()
 void SKIP_INSTRUCTION()
 {
 
-
+        return;
 
 }
 
@@ -541,7 +605,13 @@ void END_INSTRUCTION()
 void SET_INSTRUCTION()
 {
 
-        JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 
@@ -572,16 +642,15 @@ void JUMP_INSTRUCTION()
 }
 
 
-void PUSH_INSTRUCTION()
+void PUSHQ_INSTRUCTION()
 {
 
         const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long PUSH_SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
         const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
 
-        if (CURRENT_RSP + PUSH_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        if (CURRENT_RSP + QUAD_SIZE >= JRM.MEMORY_SPACE_SIZE)
         {
 
                 JRM.EXIT_CODE = 11;
@@ -593,36 +662,112 @@ void PUSH_INSTRUCTION()
         }
 
 
-        #if !defined (RAW_JRM)
-
-                memcpy(JRM.MEMORY_SPACE + CURRENT_RSP, &VALUE, PUSH_SIZE);
-
-        #else
-
-                for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
-                {
-
-                        JRM.MEMORY_SPACE[INDEX + JRM.REGISTER_LIST[RSP]] = CHAR_PTR_CAST(JRM.OPERAND_1)[INDEX];
-
-                }
-
-        #endif
+        *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
 
 
 
-        JRM.REGISTER_LIST[RSP] += PUSH_SIZE;
+        JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
 
 }
 
 
-void POP_INSTRUCTION()
+void PUSHD_INSTRUCTION()
+{
+
+        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+        if (CURRENT_RSP + DOUBLE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+
+
+
+        JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
+
+}
+
+
+void PUSHW_INSTRUCTION()
+{
+
+        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+        if (CURRENT_RSP + WORD_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+
+
+
+        JRM.REGISTER_LIST[RSP] += WORD_SIZE;
+
+}
+
+
+void PUSHB_INSTRUCTION()
+{
+
+        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+        if (CURRENT_RSP + BYTE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.MEMORY_SPACE[CURRENT_RSP] = VALUE;
+
+
+        JRM.REGISTER_LIST[RSP] += BYTE_SIZE;
+
+}
+
+
+void POPQ_INSTRUCTION()
 {
 
         unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long POP_SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP + 1 < POP_SIZE)
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP + 1 < QUAD_SIZE)
         {
 
                 JRM.EXIT_CODE = 11;
@@ -634,37 +779,28 @@ void POP_INSTRUCTION()
         }
 
 
-        CURRENT_RSP -= POP_SIZE;
+        CURRENT_RSP -= QUAD_SIZE;
 
 
-        #if !defined (RAW_JRM)
-
-                memcpy(JRM.REGISTER_LIST + JRM.OPERAND_1, JRM.MEMORY_SPACE + CURRENT_RSP, POP_SIZE);
-
-        #else
-
-                for (unsigned char INDEX = 0; INDEX < JRM.OPERAND_2; INDEX ++)
-                {
-
-                        CHAR_PTR_CAST(JRM.REGISTER_LIST[JRM.OPERAND_1])[INDEX] = JRM.MEMORY_SPACE[INDEX + NEW_RSP];
-
-                }
-
-        #endif
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
-        JRM.REGISTER_LIST[RSP] -= POP_SIZE;
+        JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
 
 }
 
 
-void LOAD_INSTRUCTION()
+void POPD_INSTRUCTION()
 {
 
-        const unsigned long CURRENT_RLA = JRM.REGISTER_LIST[RLA];
+        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        if (CURRENT_RLA >= JRM.MEMORY_SPACE_SIZE)
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP + 1 < DOUBLE_SIZE)
         {
 
                 JRM.EXIT_CODE = 11;
@@ -676,28 +812,199 @@ void LOAD_INSTRUCTION()
         }
 
 
-        #if !defined (RAW_JRM)
+        CURRENT_RSP -= DOUBLE_SIZE;
 
-                memcpy(JRM.REGISTER_LIST + JRM.OPERAND_1, JRM.MEMORY_SPACE + CURRENT_RLA, CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
-        #else
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
-                // [TODO : ADD RAW ITERATION]
 
-        #endif
+        JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
 
 }
 
 
-void WRITE_INSTRUCTION()
+void POPW_INSTRUCTION()
+{
+
+        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP + 1 < WORD_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        CURRENT_RSP -= WORD_SIZE;
+
+
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+
+
+        JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
+
+}
+
+
+void POPB_INSTRUCTION()
+{
+
+        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+        const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP + 1 < BYTE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        CURRENT_RSP -= BYTE_SIZE;
+
+
+        JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[CURRENT_RSP];
+
+
+        JRM.REGISTER_LIST[RSP] -= BYTE_SIZE;
+
+}
+
+
+void LOADQ_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (LOAD_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+}
+
+
+void LOADD_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (LOAD_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+}
+
+
+void LOADW_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (LOAD_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+}
+
+
+void LOADB_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        if (LOAD_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[LOAD_INDEX];
+
+}
+
+
+void WRITEQ_INSTRUCTION()
 {
 
         const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long CURRENT_RWA = JRM.REGISTER_LIST[RWA];
-        const unsigned long WRITE_SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-        if (CURRENT_RWA + WRITE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+        if (WRITE_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
         {
 
                 JRM.EXIT_CODE = 11;
@@ -709,15 +1016,79 @@ void WRITE_INSTRUCTION()
         }
 
 
-        #if !defined (RAW_JRM)
+        *((unsigned long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
 
-                memcpy(JRM.MEMORY_SPACE + CURRENT_RWA, &WRITE_VALUE, WRITE_SIZE);
+}
 
-        #else
 
-                // [TODO : ADD RAW ITERATION]
+void WRITED_INSTRUCTION()
+{
 
-        #endif
+        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        if (WRITE_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+
+}
+
+
+void WRITEW_INSTRUCTION()
+{
+
+        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        if (WRITE_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+
+}
+
+
+void WRITEB_INSTRUCTION()
+{
+
+        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        if (WRITE_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+        {
+
+                JRM.EXIT_CODE = 11;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
 
 }
 
@@ -725,10 +1096,13 @@ void WRITE_INSTRUCTION()
 void ADD_INSTRUCTION()
 {
 
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        JRM.REGISTER_LIST[JRM.OPERAND_1] += VALUE;
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] += CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 
@@ -736,10 +1110,13 @@ void ADD_INSTRUCTION()
 void SUB_INSTRUCTION()
 {
 
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        JRM.REGISTER_LIST[JRM.OPERAND_1] -= VALUE;
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] -= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 
@@ -747,10 +1124,13 @@ void SUB_INSTRUCTION()
 void MUL_INSTRUCTION()
 {
 
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        JRM.REGISTER_LIST[JRM.OPERAND_1] *= VALUE;
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] *= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 
@@ -758,10 +1138,27 @@ void MUL_INSTRUCTION()
 void DIV_INSTRUCTION()
 {
 
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+        const unsigned long REGISTER = JRM.OPERAND_1;
 
 
-        JRM.REGISTER_LIST[JRM.OPERAND_1] /= VALUE;
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] /= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+}
+
+
+void MOD_INSTRUCTION()
+{
+
+        const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
+
+
+        JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 }
 

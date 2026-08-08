@@ -12,7 +12,7 @@
 #define BYTECODE_STATEMENT_SIZE 24
 
 
-#define REGISTER_COUNT 255
+//#define REGISTER_COUNT 255
 
 
 #define TRUE 1
@@ -36,16 +36,24 @@ enum INTRUCTIONS_ENUM
         SUB,
         MUL,
         DIV,
+        MOD,
         CMPE,
         CMPH,
         CMPL,
         CMPHE,
         CMPLE,
-        PUSH,
-        POP,
-        LOAD,
-        WRITE,
-        JRMCALL
+        PUSHQ,
+        POPQ,
+        LOADQ,
+        LOADD,
+        LOADW,
+        LOADB,
+        WRITEQ,
+        WRITED,
+        WRITEW,
+        WRITEB,
+        JRMCALL,
+        INSTRUCTION_COUNT
 
 };
 
@@ -78,7 +86,8 @@ enum REGISTERS_ENUM
         RJM,
         RJ1,
         RJ2,
-        RJ3
+        RJ3,
+        REGISTER_COUNT
 
 };
 
