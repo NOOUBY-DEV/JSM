@@ -76,6 +76,9 @@ int main(int ARG_COUNT, char* ARG_STRINGS[])
         }
 
 
+        free(BYTECODE);
+
+
         return 0;
 
 }
@@ -188,6 +191,9 @@ int EXPORT_BYTECODE_TO_JRP_FILE(const char* BYTECODE, const size_t BYTECODE_SIZE
                 return JSM_ERROR;
 
         }
+
+
+        fclose(JRP_FILE);
 
 
         return JSM_OK;
