@@ -8,7 +8,6 @@
 
 
 #define BYTECODE_STATEMENT_SIZE 24
-#define DEFAULT_HEAP_SIZE_MB 1
 
 
 #define TRUE 1
