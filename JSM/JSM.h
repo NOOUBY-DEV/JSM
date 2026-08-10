@@ -5,14 +5,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
-#include <string.h>
 
 
 #define BYTECODE_STATEMENT_SIZE 24
-
-
-//#define REGISTER_COUNT 255
+#define DEFAULT_HEAP_SIZE_MB 1
 
 
 #define TRUE 1
@@ -58,6 +54,7 @@ enum INSTRUCTIONS_ENUM
         WRITEW,
         WRITEB,
         JRMCALL,
+        VERFH,
         INSTRUCTION_COUNT
 };
 
@@ -67,6 +64,8 @@ enum REGISTERS_ENUM
 
         RSP,
         RSB,
+        RHP,
+        RHB,
         RDP,
         RDB,
         RLA,
@@ -113,8 +112,10 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE);
 
 
-int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB);
+int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
+
+void JRM_LOG_ERROR(const char* MESSAGE);
 
 
 #endif

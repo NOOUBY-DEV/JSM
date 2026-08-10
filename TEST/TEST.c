@@ -25,7 +25,7 @@ int main()
         // [GET .jsm FILE AND COMPILE]
         {
 
-                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/BILLION_ITERATIONS.jsm", &JSMCODE_SIZE, &JSMCODE);
+                int OPEN_STATUS = JSM__READ_FILE_TO_JSMCODE("/home/noouby/JSM/TEST/STACK_BILLION.jsm", &JSMCODE_SIZE, &JSMCODE);
 
                 //BILLION_ITERATIONS
 
@@ -167,7 +167,7 @@ int main()
         }
 
 
-        JRM__RUN(BYTECODE, BYTECODE_SIZE, 2);
+        JRM__RUN(BYTECODE, BYTECODE_SIZE, 2, 1);
 
 
         // [STOP TIMER & PRINT TIME TAKEN]

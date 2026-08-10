@@ -59,6 +59,7 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"WRITED", 2},
         {"WRITEW", 2},
         {"WRITEB", 2},
+        {"VERFH", 2},
         {"JRMCALL", 0},
         {NULL, NONE}
 
@@ -71,6 +72,8 @@ const char* REGISTER_STRINGS[] =
 
         "RSP",
         "RSB",
+        "RHP",
+        "RHB",
         "RDP",
         "RDB",
         "RLA",

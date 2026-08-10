@@ -1,5 +1,6 @@
 #include "../JSM.h"
-#include <stdio.h>
+#include <stddef.h>
+#include <stdlib.h>
 
 
 
@@ -37,10 +38,6 @@
 
 
 
-#define EXIT_WITH_END_WARNING_CODE 3
-
-
-
 typedef struct JRM_DATA
 {
 
@@ -49,14 +46,16 @@ typedef struct JRM_DATA
         char* restrict MEMORY_SPACE;
 
         size_t CODE_INDEX;
-        size_t JSM_CURRENT_SOC;
-
-        size_t MEMORY_SPACE_SIZE;
-
-        size_t TOTAL_SOC;
 
         unsigned long OPERAND_1;
         unsigned long OPERAND_2;
+
+        size_t JSM_CURRENT_SOC;
+
+        size_t MEMORY_SPACE_SIZE;
+        size_t START_PLUS_HEAP_SIZE;
+
+        size_t TOTAL_SOC;
 
         unsigned long EXIT_CODE;
 
@@ -137,6 +136,8 @@ JRM_DATA JRM;
 
         void WRITEB_INSTRUCTION();
 
+        void VERFH_INSTRUCTION();
+
         void JRMCALL_INSTRUCTION();
 
 //
@@ -177,6 +178,7 @@ static void (*INSTRUCTION_LIST[])(void) =
         WRITED_INSTRUCTION,
         WRITEW_INSTRUCTION,
         WRITEB_INSTRUCTION,
+        VERFH_INSTRUCTION,
         JRMCALL_INSTRUCTION
 
 };
@@ -188,7 +190,7 @@ void JRM_LOG_ERROR(const char* MESSAGE);
 
 void LOG_PRELOAD_ERROR(const char* MESSAGE);
 
-int JRM__INIT(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB);
+int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
 void JSM__EXIT();
 
@@ -273,13 +275,13 @@ int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, cha
 }
 
 
-int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB)
+int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
         // [SETUP MEMORY SPACE]
         {
 
-                JRM.MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * STACK_SIZE_MB);
+                JRM.MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
 
 
                 JRM.MEMORY_SPACE = malloc(JRM.MEMORY_SPACE_SIZE);
@@ -350,11 +352,18 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
         }
 
 
-        // [SET RSP & RSB]
+        // [SET HEAP AND STACK REGISTERS]
         {
 
-                JRM.REGISTER_LIST[RSP] = BYTECODE_SIZE;
-                JRM.REGISTER_LIST[RSB] = BYTECODE_SIZE;
+                JRM.REGISTER_LIST[RHP] = BYTECODE_SIZE;
+                JRM.REGISTER_LIST[RHB] = BYTECODE_SIZE;
+
+
+                JRM.REGISTER_LIST[RSP] = BYTECODE_SIZE + (1024 * 1024 * HEAP_SIZE_MB);
+                JRM.REGISTER_LIST[RSB] = JRM.REGISTER_LIST[RSP];
+
+
+                JRM.START_PLUS_HEAP_SIZE = JRM.REGISTER_LIST[RSP];
 
         }
 
@@ -376,10 +385,10 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
 }
 
 
-int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB)
+int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
-        const int INIT_STATUS = JRM__INIT(CODE, CODE_SIZE, STACK_SIZE_MB);
+        const int INIT_STATUS = JRM__INIT(CODE, CODE_SIZE, STACK_SIZE_MB, HEAP_SIZE_MB);
 
 
         if (INIT_STATUS == JSM_ERROR)
@@ -499,6 +508,12 @@ void JSM__EXIT()
                 {
 
                         printf("PROGRAM EXITED WITH CODE 7 : INSTRUCTION INDEX OUT OF BOUNDS");
+
+                }
+                else if (JRM.EXIT_CODE == 8)
+                {
+
+                        printf("PROGRAM EXITED WITH CODE 8 : OUT OF HEAP MEMORY. CONSIDER RESIZING THE HEAP");
 
                 }
                 else if (JRM.EXIT_CODE == 11)
@@ -1195,6 +1210,27 @@ void MOD_INSTRUCTION()
 
 
         JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+}
+
+
+void VERFH_INSTRUCTION()
+{
+
+        const unsigned long INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+        const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+        if (INDEX + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+        {
+
+                JRM.EXIT_CODE = 8;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
 
 }
 
