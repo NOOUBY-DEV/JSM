@@ -4,9 +4,14 @@ GCC_FLAGS = -g -O0
 #-Ofast
 
 
+
 OUTPUT_FOLDER = NOOUBYS_OUTPUT
 ALL_C_FILES = $(shell find JSM -name "*.c")
 JSM_SOURCE_FILES = $(filter-out JSM/SOURCE/PROGRAMS/%, $(ALL_C_FILES))
+
+
+
+.PHONY: JSMC_PROGRAM_FILE
 
 
 
@@ -21,6 +26,7 @@ JSMC_PROGRAM_FILE: $(JSMC_PROGRAM_FILE)
 ARGS = $(filter-out $@,$(MAKECMDGOALS))
 
 
+
 RUN:
 	clear
 	./$(OUTPUT_FOLDER)/$(P) $(ARGS)
@@ -28,11 +34,17 @@ RUN:
 
 
 JSMC:
-	clear
-	./$(OUTPUT_FOLDER)/JSMC $(ARGS)
+	@clear
+	@./$(OUTPUT_FOLDER)/JSMC $(ARGS)
+
+
+
+%.jrp: FORCE
+	@:
+FORCE:
 
 
 
 JRM:
-	clear
-	./$(OUTPUT_FOLDER)/JRM $(ARGS)
+	@clear
+	@./$(OUTPUT_FOLDER)/JRM $(ARGS)

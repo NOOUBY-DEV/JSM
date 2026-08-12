@@ -190,16 +190,20 @@ void JRM_LOG_ERROR(const char* MESSAGE);
 
 void LOG_PRELOAD_ERROR(const char* MESSAGE);
 
-int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
+int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
 void JSM__EXIT();
 
 
-int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
+int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
         // [SETUP MEMORY SPACE]
         {
+
+                // - ALIGN THE BYTECODE + DATA TO 8 BYTES -
+                BYTECODE_SIZE += (BYTECODE_SIZE % QUAD_SIZE != 0) * (QUAD_SIZE - (BYTECODE_SIZE % QUAD_SIZE));
+
 
                 JRM.MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
 
@@ -255,8 +259,7 @@ int JRM__INIT(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_S
                 JRM.TOTAL_SOC = 0;
 
 
-                // [FIND END INSTRUCTION IN CODE]
-                // ------------------
+                // - FIND END INSTRUCTION IN CODE -
                 for (INDEX = 0; JRM.MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
 
 
