@@ -22,6 +22,17 @@
 <br>
 
 
+<h4>
+  <a href="DOCS/JSMLANG.md">
+    <button>JSM language docs</button>
+  </a>
+</h4>
+
+
+
+<br>
+
+
 ---
 
 
