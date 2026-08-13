@@ -31,6 +31,7 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"RETURN", 0},
         {"END", 0},
         {"JUMP", 1},
+        {"CALL", 1},
         {"SKIP", 0},
         {"SET", 2},
         {"ADD", 2},

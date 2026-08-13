@@ -24,6 +24,7 @@ enum INSTRUCTIONS_ENUM
         RETURN,
         END,
         JUMP,
+        CALL,
         SKIP,
         SET,
         ADD,

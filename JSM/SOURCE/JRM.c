@@ -80,6 +80,8 @@ JRM_DATA JRM;
 
         void JUMP_INSTRUCTION();
 
+        void CALL_INSTRUCTION();
+
         void SKIP_INSTRUCTION();
 
         void SET_INSTRUCTION();
@@ -152,6 +154,7 @@ static void (*INSTRUCTION_LIST[])(void) =
         RETURN_INSTRUCTION,
         END_INSTRUCTION,
         JUMP_INSTRUCTION,
+        CALL_INSTRUCTION,
         SKIP_INSTRUCTION,
         SET_INSTRUCTION,
         ADD_INSTRUCTION,
@@ -550,7 +553,26 @@ void CMPLE_INSTRUCTION()
 void RETURN_INSTRUCTION()
 {
 
-        JRM.CODE_INDEX = JRM.REGISTER_LIST[RRS] * BYTECODE_STATEMENT_SIZE;
+        const unsigned long STATEMENT_NUMBER = JRM.REGISTER_LIST[RRS];
+
+
+        #if !defined (UNFETTERED)
+
+                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                {
+
+                        JRM.EXIT_CODE = 4;
+                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                        return;
+
+                }
+
+        #endif
+
+
+        JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
 
 
         JRM.INCREMENT_STATMENT_INDEX = FALSE;
@@ -578,7 +600,7 @@ void END_INSTRUCTION()
 void JUMP_INSTRUCTION()
 {
 
-        const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);;
+        const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
         #if !defined (UNFETTERED)
@@ -595,6 +617,39 @@ void JUMP_INSTRUCTION()
                 }
 
         #endif
+
+
+        JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+
+
+        JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+}
+
+
+void CALL_INSTRUCTION()
+{
+
+        const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+        #if !defined (UNFETTERED)
+
+                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                {
+
+                        JRM.EXIT_CODE = 4;
+                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                        return;
+
+                }
+
+        #endif
+
+
+        JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 2;
 
 
         JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
