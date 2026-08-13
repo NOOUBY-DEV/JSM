@@ -60,6 +60,7 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"WRITEW", 2},
         {"WRITEB", 2},
         {"VERFH", 2},
+        {"HALLOC", 1},
         {"JRMCALL", 0},
         {NULL, NONE}
 

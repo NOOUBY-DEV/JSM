@@ -138,6 +138,8 @@ JRM_DATA JRM;
 
         void VERFH_INSTRUCTION();
 
+        void HALLOC_INSTRUCTION();
+
         void JRMCALL_INSTRUCTION();
 
 //
@@ -179,6 +181,7 @@ static void (*INSTRUCTION_LIST[])(void) =
         WRITEW_INSTRUCTION,
         WRITEB_INSTRUCTION,
         VERFH_INSTRUCTION,
+        HALLOC_INSTRUCTION,
         JRMCALL_INSTRUCTION
 
 };
@@ -1133,6 +1136,29 @@ void MOD_INSTRUCTION()
 
 
         JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+}
+
+
+void HALLOC_INSTRUCTION()
+{
+
+        const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+        if (JRM.REGISTER_LIST[RHP] + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+        {
+
+                JRM.EXIT_CODE = 8;
+                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                return;
+
+        }
+
+
+        JRM.REGISTER_LIST[RHP] += SIZE;
 
 }
 
