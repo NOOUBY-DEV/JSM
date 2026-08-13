@@ -210,9 +210,6 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 > **PUSH, POP, LOAD, WRITE series**
 
 
-<br>
-
-
 - **PUSH**
 
 > Pushes a value onto the stack relative to **RSP**, **RSP** is automatically incremented by the no. of **Bytes**
@@ -242,7 +239,7 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 
 ---
 
-### WRITE
+- **WRITE**
 
 > Writes in the program memory space by a number of **Bytes** into a register (operand 1) starting from the index (operand 2)
 
@@ -257,7 +254,7 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 ---
 
 
-### LOAD
+- **LOAD**
 
 > Loads a number of **Bytes** into a register (operand 1) starting from the index (operand 2) in the program memory space
 
@@ -285,10 +282,10 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **RHB** | **`HEAP`** | The heap base pointer |
 | **RDP** | **`STATIC DATA`** | The static data pointer |
 | **RDB** | **`STATIC DATA`** | The static data base pointer |
-| **RLA** | **`GENERAL`, `PLACEHOLDER`** | **LOAD** address/index |
-| **RWA** | **`GENERAL`, `PLACEHOLDER`** | **WRITE** address/index |
-| **RRS** | **`RETURN`** | The jump statement number for **RETURN**|
-| **RRV** | **`GENERAL`, `PLACEHOLDER`** | **RETURN**'s value |
+| **RLA** | **`GENERAL`, `PLACEHOLDER`** | `LOAD` address/index |
+| **RWA** | **`GENERAL`, `PLACEHOLDER`** | `WRITE` address/index |
+| **RRS** | **`RETURN`** | The jump statement number for `RETURN`|
+| **RRV** | **`GENERAL`, `PLACEHOLDER`** | `RETURN`'s value |
 | **RG1** | **`GENERAL`** | \ |
 | **RG2** | **`GENERAL`** | \ |
 | **RG3** | **`GENERAL`** | \ |
