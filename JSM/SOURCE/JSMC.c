@@ -80,7 +80,6 @@ const char* REGISTER_STRINGS[] =
         "RDB",
         "RLA",
         "RWA",
-        "RLP",
         "RRA",
         "RRS",
         "RSM",

@@ -71,7 +71,6 @@ enum REGISTERS_ENUM
         RDB,
         RLA,
         RWA,
-        RLP,
         RRS,
         RRV,
         RSM,
