@@ -16,6 +16,8 @@ int JRM__READ_JRP_FILE(const char* FILE_PATH, size_t* BYTECODE_SIZE, char** BYTE
 
 void HEXDUMP_BYTECODE(char* BYTECODE, size_t BYTECODE_SIZE);
 
+void HEXDUMP_BYTECODE_WINDOWS(char* BYTECODE, size_t BYTECODE_SIZE);
+
 
 
 
@@ -48,7 +50,15 @@ int main(int ARG_COUNT, char* ARG_STRINGS[])
         if (DEBUG)
         {
 
-                HEXDUMP_BYTECODE(BYTECODE, BYTECODE_SIZE);
+                #ifdef _WIN32
+
+                        HEXDUMP_BYTECODE_WINDOWS(BYTECODE, BYTECODE_SIZE);
+
+                #else
+
+                        HEXDUMP_BYTECODE(BYTECODE, BYTECODE_SIZE);
+
+                #endif
 
         }
 
@@ -260,6 +270,96 @@ void HEXDUMP_BYTECODE(char* BYTECODE, size_t BYTECODE_SIZE)
                                 printf("───────────────────────────────────────────────────────────────────────\n");
                                 printf("//                            DATA BELOW                             //\n");
                                 printf("───────────────────────────────────────────────────────────────────────");
+
+
+                                WAITING_FOR_END = FALSE;
+
+                        }
+
+
+                        printf("\n");
+
+                }
+
+        }
+
+
+        printf("\033[0m\n\n\n");
+
+}
+
+void HEXDUMP_BYTECODE_WINDOWS(char* BYTECODE, size_t BYTECODE_SIZE)
+{
+
+        int WAITING_FOR_END = TRUE;
+
+
+        printf("\n\n");
+        printf("IN T1 T2     EMPTY                OPR1                   OPR2\n");
+        printf("-- -- -- -------------- -------------------- --------------------------\n");
+        //////////////// ////////////
+
+
+        for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX++)
+        {
+
+                unsigned char CHAR = BYTECODE[INDEX];
+
+
+                if (CHAR >= 0 && CHAR <= 9)
+                {
+
+                        printf("\033[1;31m");
+
+                }
+                else
+                {
+
+                        printf("\033[0m");
+
+                }
+
+
+
+                if (WAITING_FOR_END)
+                {
+
+               		const size_t REMAINDER = INDEX % BYTECODE_STATEMENT_SIZE;
+
+
+	                       	if (REMAINDER == 1 || REMAINDER == 2)
+	                        {
+
+	                        	printf("\033[92m");
+
+	                        }
+
+
+				if (REMAINDER > 2 && REMAINDER < 8)
+				{
+
+					printf("\033[37m");
+
+				}
+
+                }
+
+
+
+                printf("%02x ", CHAR);
+
+
+                if ((INDEX + 1) % BYTECODE_STATEMENT_SIZE == 0)
+                {
+
+
+                        if ((BYTECODE[(INDEX + 1) - BYTECODE_STATEMENT_SIZE] == END) && WAITING_FOR_END)
+                        {
+
+                                printf("\033[0m\n");
+                                printf("-----------------------------------------------------------------------\n");
+                                printf("//                            DATA BELOW                             //\n");
+                                printf("-----------------------------------------------------------------------\n");
 
 
                                 WAITING_FOR_END = FALSE;
