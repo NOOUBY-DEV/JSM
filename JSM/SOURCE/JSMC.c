@@ -71,7 +71,6 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
 
 const char* REGISTER_STRINGS[] =
 {
-
         "RSP",
         "RSB",
         "RHP",
@@ -80,8 +79,8 @@ const char* REGISTER_STRINGS[] =
         "RDB",
         "RLA",
         "RWA",
-        "RRA",
         "RRS",
+        "RRV",
         "RSM",
         "RS1",
         "RS2",
@@ -100,7 +99,6 @@ const char* REGISTER_STRINGS[] =
         "RJ2",
         "RJ3",
         NULL
-
 };
 
 

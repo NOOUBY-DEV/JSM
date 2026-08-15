@@ -1,5 +1,6 @@
 #include "../JSM.h"
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 
@@ -68,126 +69,6 @@ JRM_DATA;
 
 
 JRM_DATA JRM;
-
-
-// [INSTRUCTIONS DECLERATION]
-//
-        void EXIT_INSTRUCTION();
-
-        void RETURN_INSTRUCTION();
-
-        void END_INSTRUCTION();
-
-        void JUMP_INSTRUCTION();
-
-        void CALL_INSTRUCTION();
-
-        void SKIP_INSTRUCTION();
-
-        void SET_INSTRUCTION();
-
-        void ADD_INSTRUCTION();
-
-        void SUB_INSTRUCTION();
-
-        void MUL_INSTRUCTION();
-
-        void DIV_INSTRUCTION();
-
-        void MOD_INSTRUCTION();
-
-        void CMPE_INSTRUCTION();
-
-        void CMPH_INSTRUCTION();
-
-        void CMPL_INSTRUCTION();
-
-        void CMPHE_INSTRUCTION();
-
-        void CMPLE_INSTRUCTION();
-
-        void PUSHQ_INSTRUCTION();
-
-        void PUSHD_INSTRUCTION();
-
-        void PUSHW_INSTRUCTION();
-
-        void PUSHB_INSTRUCTION();
-
-        void POPQ_INSTRUCTION();
-
-        void POPD_INSTRUCTION();
-
-        void POPW_INSTRUCTION();
-
-        void POPB_INSTRUCTION();
-
-        void LOADQ_INSTRUCTION();
-
-        void LOADD_INSTRUCTION();
-
-        void LOADW_INSTRUCTION();
-
-        void LOADB_INSTRUCTION();
-
-        void WRITEQ_INSTRUCTION();
-
-        void WRITED_INSTRUCTION();
-
-        void WRITEW_INSTRUCTION();
-
-        void WRITEB_INSTRUCTION();
-
-        void VERFH_INSTRUCTION();
-
-        void HALLOC_INSTRUCTION();
-
-        void JRMCALL_INSTRUCTION();
-
-//
-
-
-static void (*INSTRUCTION_LIST[])(void) =
-{
-
-        EXIT_INSTRUCTION,
-        RETURN_INSTRUCTION,
-        END_INSTRUCTION,
-        JUMP_INSTRUCTION,
-        CALL_INSTRUCTION,
-        SKIP_INSTRUCTION,
-        SET_INSTRUCTION,
-        ADD_INSTRUCTION,
-        SUB_INSTRUCTION,
-        MUL_INSTRUCTION,
-        DIV_INSTRUCTION,
-        MOD_INSTRUCTION,
-        CMPE_INSTRUCTION,
-        CMPH_INSTRUCTION,
-        CMPL_INSTRUCTION,
-        CMPHE_INSTRUCTION,
-        CMPLE_INSTRUCTION,
-        PUSHQ_INSTRUCTION,
-        PUSHD_INSTRUCTION,
-        PUSHW_INSTRUCTION,
-        PUSHB_INSTRUCTION,
-        POPQ_INSTRUCTION,
-        POPD_INSTRUCTION,
-        POPW_INSTRUCTION,
-        POPB_INSTRUCTION,
-        LOADQ_INSTRUCTION,
-        LOADD_INSTRUCTION,
-        LOADW_INSTRUCTION,
-        LOADB_INSTRUCTION,
-        WRITEQ_INSTRUCTION,
-        WRITED_INSTRUCTION,
-        WRITEW_INSTRUCTION,
-        WRITEB_INSTRUCTION,
-        VERFH_INSTRUCTION,
-        HALLOC_INSTRUCTION,
-        JRMCALL_INSTRUCTION
-
-};
 
 
 
@@ -331,39 +212,1193 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         while (JRM.NOT_EXIT_REQUESTED)
         {
 
-                // [EXECUTE INSTRUCTION]
-                {
-
-                        const unsigned long INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
+                const unsigned long INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
 
 
-                        #if !defined (UNFETTERED)
+                #if !defined (UNFETTERED)
 
-                                if (INSTRUCTION >= INSTRUCTION_COUNT)
-                                {
-
-                                        JRM.EXIT_CODE = 7;
-
-
-                                        JSM__EXIT();
-
-
-                                        return JSM_ERROR;
-                                }
-
-                        #endif
-
-
-                        // [WRITE BOTH OPERANDS]
+                        if (INSTRUCTION >= INSTRUCTION_COUNT)
                         {
 
-                                JRM.OPERAND_1 = *((const unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 8));
-                                JRM.OPERAND_2 = *((const unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 16));
+                                JRM.EXIT_CODE = 7;
+                                JSM__EXIT();
+
+
+                                return JSM_ERROR;
+
+                        }
+
+                #endif
+
+
+                // [WRITE BOTH OPERANDS]
+                {
+
+                        JRM.OPERAND_1 = *((const unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 8));
+                        JRM.OPERAND_2 = *((const unsigned long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 16));
+
+                }
+
+
+                switch (INSTRUCTION)
+                {
+
+                        case (EXIT) :
+                        {
+
+                                JRM.NOT_EXIT_REQUESTED = FALSE;
+                                JRM.EXIT_CODE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                break;
 
                         }
 
 
-                        INSTRUCTION_LIST[INSTRUCTION]();
+                        case (RETURN) :
+                        {
+
+                                const unsigned long STATEMENT_NUMBER = JRM.REGISTER_LIST[RRS];
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        {
+
+                                                JRM.EXIT_CODE = 4;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                break;
+
+                        }
+
+
+                        case (END) :
+                        {
+
+                                JRM.NOT_EXIT_REQUESTED = FALSE;
+                                JRM.EXIT_CODE = 3;
+
+
+                                break;
+
+                        }
+
+
+                        case (JUMP) :
+                        {
+
+                                const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        {
+
+                                                JRM.EXIT_CODE = 4;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                break;
+
+                        }
+
+
+                        case (CALL) :
+                        {
+
+                                const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        {
+
+                                                JRM.EXIT_CODE = 4;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 2;
+                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                break;
+
+                        }
+
+
+                        case (SKIP) :
+                        {
+
+                                break;
+
+                        }
+
+
+                        case (SET) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (ADD) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] += CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (SUB) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] -= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (MUL) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] *= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (DIV) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] /= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (MOD) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPE) :
+                        {
+
+                                const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 != OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPH) :
+                        {
+
+                                const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 <= OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPL) :
+                        {
+
+                                const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 >= OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPHE) :
+                        {
+
+                                const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 < OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPLE) :
+                        {
+
+                                const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 > OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (PUSHQ) :
+                        {
+
+                                const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+                                if (CURRENT_RSP + QUAD_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+
+
+                                JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (PUSHD) :
+                        {
+
+                                const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+                                if (CURRENT_RSP + DOUBLE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+
+
+                                JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (PUSHW) :
+                        {
+
+                                const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+                                if (CURRENT_RSP + WORD_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+
+
+                                JRM.REGISTER_LIST[RSP] += WORD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (PUSHB) :
+                        {
+
+                                const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+
+                                if (CURRENT_RSP + BYTE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.MEMORY_SPACE[CURRENT_RSP] = VALUE;
+
+
+                                JRM.REGISTER_LIST[RSP] += BYTE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (POPQ) :
+                        {
+
+                                unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < QUAD_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                CURRENT_RSP -= QUAD_SIZE;
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+
+
+                                JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (POPD) :
+                        {
+
+                                unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < DOUBLE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                CURRENT_RSP -= DOUBLE_SIZE;
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+
+
+                                JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (POPW) :
+                        {
+
+                                unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < WORD_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                CURRENT_RSP -= WORD_SIZE;
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+
+
+                                JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (POPB) :
+                        {
+
+                                unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < BYTE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                CURRENT_RSP -= BYTE_SIZE;
+
+
+                                JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[CURRENT_RSP];
+
+
+                                JRM.REGISTER_LIST[RSP] -= BYTE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (LOADQ) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+
+                                break;
+
+                        }
+
+
+                        case (LOADD) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+
+                                break;
+
+                        }
+
+
+                        case (LOADW) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+
+
+                                break;
+
+                        }
+
+
+                        case (LOADB) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[LOAD_INDEX];
+
+
+                                break;
+
+                        }
+
+
+                        case (WRITEQ) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (WRITE_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (WRITED) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (WRITE_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (WRITEW) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (WRITE_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (WRITEB) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (WRITE_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (VERFH) :
+                        {
+
+                                const unsigned long INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (INDEX + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 8;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                break;
+
+                        }
+
+
+                        case (HALLOC) :
+                        {
+
+                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                if (JRM.REGISTER_LIST[RHP] + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+                                {
+
+                                        JRM.EXIT_CODE = 8;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[RHP] += SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (JRMCALL) :
+                        {
+
+                                const unsigned long CURRENT_RJM = JRM.REGISTER_LIST[RJM];
+
+
+                                switch (CURRENT_RJM)
+                                {
+
+                                        case (1) : goto PRINT;
+                                        default: break;
+
+                                }
+
+
+                                // [BREAK BEFORE IT REACHES THE GOTOS]
+                                {
+
+                                        break;
+
+                                }
+
+
+                                PRINT:
+                                {
+
+                                        long VALID = TRUE;
+
+
+                                        const unsigned long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
+                                        unsigned long PRINT_LENGTH = JRM.REGISTER_LIST[RJ2];
+
+
+
+                                        if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (PRINT_LENGTH == 0)
+                                        {
+
+                                                size_t INDEX;
+
+
+                                                for (INDEX = STARTING_INDEX; JRM.MEMORY_SPACE[INDEX] != '\0' && INDEX < JRM.MEMORY_SPACE_SIZE; INDEX ++, PRINT_LENGTH ++);
+
+
+                                                if (INDEX == JRM.MEMORY_SPACE_SIZE)
+                                                {
+
+                                                        VALID = FALSE;
+
+                                                }
+
+                                        }
+                                        else
+                                        {
+
+                                                if (STARTING_INDEX + PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE)
+                                                {
+
+                                                        VALID = FALSE;
+
+                                                }
+
+                                        }
+
+
+                                        if (!VALID)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        // [PRINT STRING]
+                                        {
+
+                                                const size_t LAST_CHAR_INDEX = STARTING_INDEX + PRINT_LENGTH;
+
+                                                const char LAST_CHAR = JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ];
+
+
+                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = '\0';
+
+                                                printf("%s", JRM.MEMORY_SPACE + STARTING_INDEX);
+
+                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = LAST_CHAR;
+
+                                        }
+
+
+                                        break;
+
+                                }
+
+                        }
 
                 }
 
@@ -466,879 +1501,7 @@ void JSM__EXIT()
 }
 
 
-void EXIT_INSTRUCTION()
-{
 
-        JRM.NOT_EXIT_REQUESTED = FALSE;
-        JRM.EXIT_CODE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-}
-
-
-void CMPE_INSTRUCTION()
-{
-
-        const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 != OPERAND_2));
-
-}
-
-
-void CMPH_INSTRUCTION()
-{
-
-        const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 <= OPERAND_2));
-
-}
-
-
-void CMPL_INSTRUCTION()
-{
-
-        const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 >= OPERAND_2));
-
-}
-
-
-void CMPHE_INSTRUCTION()
-{
-
-        const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 < OPERAND_2));
-
-}
-
-
-void CMPLE_INSTRUCTION()
-{
-
-        const unsigned long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-
-        JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 > OPERAND_2));
-
-}
-
-
-void RETURN_INSTRUCTION()
-{
-
-        const unsigned long STATEMENT_NUMBER = JRM.REGISTER_LIST[RRS];
-
-
-        #if !defined (UNFETTERED)
-
-                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
-                {
-
-                        JRM.EXIT_CODE = 4;
-                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                        return;
-
-                }
-
-        #endif
-
-
-        JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-}
-
-
-void SKIP_INSTRUCTION()
-{
-
-        return;
-
-}
-
-
-void END_INSTRUCTION()
-{
-
-        JRM.NOT_EXIT_REQUESTED = FALSE;
-        JRM.EXIT_CODE = 3;
-
-}
-
-
-void JUMP_INSTRUCTION()
-{
-
-        const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-        #if !defined (UNFETTERED)
-
-                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
-                {
-
-                        JRM.EXIT_CODE = 4;
-                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                        return;
-
-                }
-
-        #endif
-
-
-        JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-}
-
-
-void CALL_INSTRUCTION()
-{
-
-        const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-        #if !defined (UNFETTERED)
-
-                if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
-                {
-
-                        JRM.EXIT_CODE = 4;
-                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                        return;
-
-                }
-
-        #endif
-
-
-        JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 2;
-
-
-        JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
-
-
-        JRM.INCREMENT_STATMENT_INDEX = FALSE;
-
-}
-
-
-void PUSHQ_INSTRUCTION()
-{
-
-        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-
-        if (CURRENT_RSP + QUAD_SIZE >= JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
-
-
-
-        JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
-
-}
-
-
-void PUSHD_INSTRUCTION()
-{
-
-        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-
-        if (CURRENT_RSP + DOUBLE_SIZE >= JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
-
-
-
-        JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
-
-}
-
-
-void PUSHW_INSTRUCTION()
-{
-
-        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-
-        if (CURRENT_RSP + WORD_SIZE >= JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
-
-
-
-        JRM.REGISTER_LIST[RSP] += WORD_SIZE;
-
-}
-
-
-void PUSHB_INSTRUCTION()
-{
-
-        const unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-
-        if (CURRENT_RSP + BYTE_SIZE >= JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.MEMORY_SPACE[CURRENT_RSP] = VALUE;
-
-
-        JRM.REGISTER_LIST[RSP] += BYTE_SIZE;
-
-}
-
-
-void POPQ_INSTRUCTION()
-{
-
-        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < QUAD_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        CURRENT_RSP -= QUAD_SIZE;
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
-
-
-        JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
-
-}
-
-
-void POPD_INSTRUCTION()
-{
-
-        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < DOUBLE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        CURRENT_RSP -= DOUBLE_SIZE;
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
-
-
-        JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
-
-}
-
-
-void POPW_INSTRUCTION()
-{
-
-        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < WORD_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        CURRENT_RSP -= WORD_SIZE;
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
-
-
-        JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
-
-}
-
-
-void POPB_INSTRUCTION()
-{
-
-        unsigned long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < BYTE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        CURRENT_RSP -= BYTE_SIZE;
-
-
-        JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[CURRENT_RSP];
-
-
-        JRM.REGISTER_LIST[RSP] -= BYTE_SIZE;
-
-}
-
-
-void LOADQ_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (LOAD_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
-
-}
-
-
-void LOADD_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (LOAD_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
-
-}
-
-
-void LOADW_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (LOAD_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
-
-}
-
-
-void LOADB_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-        const unsigned long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        if (LOAD_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[LOAD_INDEX];
-
-}
-
-
-void WRITEQ_INSTRUCTION()
-{
-
-        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        if (WRITE_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
-
-}
-
-
-void WRITED_INSTRUCTION()
-{
-
-        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        if (WRITE_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
-
-}
-
-
-void WRITEW_INSTRUCTION()
-{
-
-        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        if (WRITE_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
-
-}
-
-
-void WRITEB_INSTRUCTION()
-{
-
-        const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        if (WRITE_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
-        {
-
-                JRM.EXIT_CODE = 11;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
-
-}
-
-
-void SET_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void ADD_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] += CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void SUB_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] -= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void MUL_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] *= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void DIV_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] /= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void MOD_INSTRUCTION()
-{
-
-        const unsigned long REGISTER = JRM.OPERAND_1;
-
-
-        IF_REGISTER_NOT_VALID_ERROR_EXIT(REGISTER);
-
-
-        JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-}
-
-
-void HALLOC_INSTRUCTION()
-{
-
-        const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
-
-        if (JRM.REGISTER_LIST[RHP] + SIZE >= JRM.START_PLUS_HEAP_SIZE)
-        {
-
-                JRM.EXIT_CODE = 8;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-
-        JRM.REGISTER_LIST[RHP] += SIZE;
-
-}
-
-
-void VERFH_INSTRUCTION()
-{
-
-        const unsigned long INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-        const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-        if (INDEX + SIZE >= JRM.START_PLUS_HEAP_SIZE)
-        {
-
-                JRM.EXIT_CODE = 8;
-                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                return;
-
-        }
-
-}
-
-
-void JRMCALL_INSTRUCTION()
-{
-
-        const unsigned long CURRENT_RJM = JRM.REGISTER_LIST[RJM];
-
-
-        switch (CURRENT_RJM)
-        {
-
-                case (1) : goto PRINT;
-                default : return;
-
-        }
-
-
-        PRINT:
-        {
-
-                long VALID = TRUE;
-
-
-                const unsigned long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
-                unsigned long PRINT_LENGTH = JRM.REGISTER_LIST[RJ2];
-
-
-
-                if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE)
-                {
-
-                        JRM.EXIT_CODE = 11;
-                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-                        return;
-
-                }
-
-
-                if (PRINT_LENGTH == 0)
-                {
-
-                        size_t INDEX;
-
-
-                        for (INDEX = STARTING_INDEX; JRM.MEMORY_SPACE[INDEX] != '\0' && INDEX < JRM.MEMORY_SPACE_SIZE; INDEX ++, PRINT_LENGTH ++);
-
-
-                        if (INDEX == JRM.MEMORY_SPACE_SIZE)
-                        {
-
-                                VALID = FALSE;
-
-                        }
-
-                }
-                else
-                {
-
-                        if (STARTING_INDEX + PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE)
-                        {
-
-                                VALID = FALSE;
-
-                        }
-
-                }
-
-
-                if (!VALID)
-                {
-
-                        JRM.EXIT_CODE = 11;
-                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-                        return;
-
-                }
-
-
-                // [PRINT STRING]
-                {
-
-                        const size_t LAST_CHAR_INDEX = STARTING_INDEX + PRINT_LENGTH;
-
-                        const char LAST_CHAR = JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ];
-
-
-                        JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = '\0';
-
-                        printf("%s", JRM.MEMORY_SPACE + STARTING_INDEX);
-
-                        JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = LAST_CHAR;
-
-                }
-
-
-                return;
-
-        }
-
-}
 
 
 void JRM_LOG_ERROR(const char* MESSAGE)

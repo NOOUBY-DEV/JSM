@@ -53,9 +53,9 @@ enum INSTRUCTIONS_ENUM
         WRITED,
         WRITEW,
         WRITEB,
-        JRMCALL,
         VERFH,
         HALLOC,
+        JRMCALL,
         INSTRUCTION_COUNT
 };
 
