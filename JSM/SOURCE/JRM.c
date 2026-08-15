@@ -643,7 +643,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP + QUAD_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -674,7 +674,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP + DOUBLE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -705,7 +705,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP + WORD_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -736,7 +736,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP + BYTE_SIZE >= JRM.MEMORY_SPACE_SIZE)
+                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -978,7 +978,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                if (LOAD_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1021,7 +1021,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                if (LOAD_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1064,7 +1064,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                if (LOAD_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1107,7 +1107,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                if (LOAD_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1134,7 +1134,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX + QUAD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1161,7 +1161,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX + DOUBLE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1188,7 +1188,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX + WORD_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1215,7 +1215,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX + BYTE_SIZE > JRM.MEMORY_SPACE_SIZE)
+                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1242,7 +1242,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (INDEX + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+                                if (INDEX >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - INDEX)
                                 {
 
                                         JRM.EXIT_CODE = 8;
@@ -1263,9 +1263,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long CURRENT_RHP = JRM.REGISTER_LIST[RHP];
 
 
-                                if (JRM.REGISTER_LIST[RHP] + SIZE >= JRM.START_PLUS_HEAP_SIZE)
+                                if (CURRENT_RHP >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - CURRENT_RHP)
                                 {
 
                                         JRM.EXIT_CODE = 8;
@@ -1351,7 +1352,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         else
                                         {
 
-                                                if (STARTING_INDEX + PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE)
+                                                if (PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE - STARTING_INDEX)
                                                 {
 
                                                         VALID = FALSE;
