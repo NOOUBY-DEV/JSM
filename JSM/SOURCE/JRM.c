@@ -68,21 +68,14 @@ JRM_DATA;
 
 
 
-JRM_DATA JRM;
-
-
-
-
-void JRM_LOG_ERROR(const char* MESSAGE);
+void JRM_LOG_ERROR(JRM_DATA* JRM, const char* MESSAGE);
 
 void LOG_PRELOAD_ERROR(const char* MESSAGE);
 
-int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
-
-void JSM__EXIT();
+void JSM__EXIT(JRM_DATA* JRM);
 
 
-int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
+int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
         // [SETUP MEMORY SPACE]
@@ -92,13 +85,13 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
                 BYTECODE_SIZE += (BYTECODE_SIZE % QUAD_SIZE != 0) * (QUAD_SIZE - (BYTECODE_SIZE % QUAD_SIZE));
 
 
-                JRM.MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
+                JRM->MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
 
 
-                JRM.MEMORY_SPACE = malloc(JRM.MEMORY_SPACE_SIZE);
+                JRM->MEMORY_SPACE = malloc(JRM->MEMORY_SPACE_SIZE);
 
 
-                if (JRM.MEMORY_SPACE == NULL)
+                if (JRM->MEMORY_SPACE == NULL)
                 {
 
                         LOG_PRELOAD_ERROR("FAILED TO ALLOCATE PROGRAM MEMORY SPACE");
@@ -117,7 +110,7 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
                 for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX ++)
                 {
 
-                        JRM.MEMORY_SPACE[INDEX] = CODE[INDEX];
+                        JRM->MEMORY_SPACE[INDEX] = CODE[INDEX];
 
                 }
 
@@ -130,7 +123,7 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
                 for (unsigned long INDEX = 0; INDEX < REGISTER_COUNT; INDEX ++)
                 {
 
-                        JRM.REGISTER_LIST[INDEX] = 0;
+                        JRM->REGISTER_LIST[INDEX] = 0;
 
                 }
 
@@ -143,21 +136,21 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
                 size_t INDEX;
 
 
-                JRM.TOTAL_SOC = 0;
+                JRM->TOTAL_SOC = 0;
 
 
                 // - FIND END INSTRUCTION IN CODE -
-                for (INDEX = 0; JRM.MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
+                for (INDEX = 0; JRM->MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
 
 
                 INDEX += BYTECODE_STATEMENT_SIZE;
 
 
-                JRM.TOTAL_SOC = INDEX / BYTECODE_STATEMENT_SIZE;
+                JRM->TOTAL_SOC = INDEX / BYTECODE_STATEMENT_SIZE;
 
 
-                JRM.REGISTER_LIST[RDP] = INDEX;
-                JRM.REGISTER_LIST[RDB] = INDEX;
+                JRM->REGISTER_LIST[RDP] = INDEX;
+                JRM->REGISTER_LIST[RDB] = INDEX;
 
         }
 
@@ -165,15 +158,15 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
         // [SET HEAP AND STACK REGISTERS]
         {
 
-                JRM.REGISTER_LIST[RHP] = BYTECODE_SIZE;
-                JRM.REGISTER_LIST[RHB] = BYTECODE_SIZE;
+                JRM->REGISTER_LIST[RHP] = BYTECODE_SIZE;
+                JRM->REGISTER_LIST[RHB] = BYTECODE_SIZE;
 
 
-                JRM.REGISTER_LIST[RSP] = BYTECODE_SIZE + (1024 * 1024 * HEAP_SIZE_MB);
-                JRM.REGISTER_LIST[RSB] = JRM.REGISTER_LIST[RSP];
+                JRM->REGISTER_LIST[RSP] = BYTECODE_SIZE + (1024 * 1024 * HEAP_SIZE_MB);
+                JRM->REGISTER_LIST[RSB] = JRM->REGISTER_LIST[RSP];
 
 
-                JRM.START_PLUS_HEAP_SIZE = JRM.REGISTER_LIST[RSP];
+                JRM->START_PLUS_HEAP_SIZE = JRM->REGISTER_LIST[RSP];
 
         }
 
@@ -181,11 +174,11 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
         // [SET / RESET RUNTIME DATA]
         {
 
-                JRM.NOT_EXIT_REQUESTED = TRUE;
-                JRM.INCREMENT_STATMENT_INDEX = TRUE;
+                JRM->NOT_EXIT_REQUESTED = TRUE;
+                JRM->INCREMENT_STATMENT_INDEX = TRUE;
 
-                JRM.CODE_INDEX = 0;
-                JRM.JSM_CURRENT_SOC = 1;
+                JRM->CODE_INDEX = 0;
+                JRM->JSM_CURRENT_SOC = 1;
 
         }
 
@@ -198,7 +191,10 @@ int JRM__INIT(const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB
 int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
-        const int INIT_STATUS = JRM__INIT(CODE, CODE_SIZE, STACK_SIZE_MB, HEAP_SIZE_MB);
+        JRM_DATA JRM;
+
+
+        const int INIT_STATUS = JRM__INIT(&JRM, CODE, CODE_SIZE, STACK_SIZE_MB, HEAP_SIZE_MB);
 
 
         if (INIT_STATUS == JSM_ERROR)
@@ -221,7 +217,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 JRM.EXIT_CODE = 7;
-                                JSM__EXIT();
+                                JSM__EXIT(&JRM);
 
 
                                 return JSM_ERROR;
@@ -1423,7 +1419,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         }
 
 
-        JSM__EXIT();
+        JSM__EXIT(&JRM);
 
 
         return JSM_OK;
@@ -1431,10 +1427,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 }
 
 
-void JSM__EXIT()
+void JSM__EXIT(JRM_DATA* JRM)
 {
 
-        free(JRM.MEMORY_SPACE);
+        free(JRM->MEMORY_SPACE);
 
 
 
@@ -1444,43 +1440,43 @@ void JSM__EXIT()
                 printf("\033[1;31m[JRM EXIT]\033[0m : ");
 
 
-                if (JRM.EXIT_CODE == 0)
+                if (JRM->EXIT_CODE == 0)
                 {
 
                         printf("PROGRAM SUCCESSFULLY EXITED WITH CODE 0");
 
                 }
-                else if (JRM.EXIT_CODE == 3)
+                else if (JRM->EXIT_CODE == 3)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 3 : END STATMENT WAS CALLED, MAKE SURE TO CALL EXIT BEFORE END");
 
                 }
-                else if (JRM.EXIT_CODE == 4)
+                else if (JRM->EXIT_CODE == 4)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 4 : STATMENT JUMP OUT OF BOUNDS");
 
                 }
-                else if (JRM.EXIT_CODE == 5)
+                else if (JRM->EXIT_CODE == 5)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 5 : REGISTER INDEX OUT OF BOUNDS");
 
                 }
-                else if (JRM.EXIT_CODE == 7)
+                else if (JRM->EXIT_CODE == 7)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 7 : INSTRUCTION INDEX OUT OF BOUNDS");
 
                 }
-                else if (JRM.EXIT_CODE == 8)
+                else if (JRM->EXIT_CODE == 8)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 8 : OUT OF HEAP MEMORY. CONSIDER RESIZING THE HEAP");
 
                 }
-                else if (JRM.EXIT_CODE == 11)
+                else if (JRM->EXIT_CODE == 11)
                 {
 
                         printf("PROGRAM EXITED WITH CODE 11 : SEGMENTATION FAULT");
@@ -1489,7 +1485,7 @@ void JSM__EXIT()
                 else
                 {
 
-                        printf("PROGRAM EXITED WITH CODE %ld", JRM.EXIT_CODE);
+                        printf("PROGRAM EXITED WITH CODE %ld", JRM->EXIT_CODE);
 
                 }
 
@@ -1501,13 +1497,10 @@ void JSM__EXIT()
 }
 
 
-
-
-
-void JRM_LOG_ERROR(const char* MESSAGE)
+void JRM_LOG_ERROR(JRM_DATA* JRM, const char* MESSAGE)
 {
 
-        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JRM.JSM_CURRENT_SOC, MESSAGE);
+        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JRM->JSM_CURRENT_SOC, MESSAGE);
 
 }
 

@@ -115,7 +115,4 @@ int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BY
 int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
 
-void JRM_LOG_ERROR(const char* MESSAGE);
-
-
 #endif
