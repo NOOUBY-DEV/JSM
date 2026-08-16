@@ -176,6 +176,8 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **MUL** | Multiplies a register by a value | ```MUL RG1 14;``` | ```MUL RG1 RG2;``` |
 | **DIV** | Divides a register by a value | ```DIV RG1 14;``` | ```DIV RG1 RG2;``` |
 | **MOD** | Modulos a register by a value to its remainder | ```MOD RG1 14;``` | ```MOD RG1 RG2;``` |
+| **INC** | Increments a register by 1 | ```INC RG1;``` | \ |
+| **DEC** | Decrements a register by 1 | ```DEC RG1;``` | \ |
 | **JUMP** | Jumps to a statement (0-based) | ```JUMP 14;``` | ```JUMP RG1;``` |
 | **SKIP** | Skips to the next instruction | ```SKIP;``` | \ |
 | **CALL**| Jumps to a statement and sets register **RRS** to the next statment | ```CALL 14;``` | ```CALL RG1;``` |
