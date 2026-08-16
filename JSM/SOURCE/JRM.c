@@ -349,8 +349,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 2;
-                                JRM.CODE_INDEX = (STATEMENT_INDEX - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 1;
+                                JRM.CODE_INDEX = STATEMENT_INDEX * BYTECODE_STATEMENT_SIZE;
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
