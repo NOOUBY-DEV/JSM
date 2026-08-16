@@ -56,7 +56,7 @@ typedef struct JRM_DATA
         size_t MEMORY_SPACE_SIZE;
         size_t START_PLUS_HEAP_SIZE;
 
-        size_t TOTAL_SOC;
+        size_t TOTAL_STATEMENT_COUNT;
 
         unsigned long EXIT_CODE;
 
@@ -136,7 +136,7 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
                 size_t INDEX;
 
 
-                JRM->TOTAL_SOC = 0;
+                JRM->TOTAL_STATEMENT_COUNT = 0;
 
 
                 // - FIND END INSTRUCTION IN CODE -
@@ -146,7 +146,7 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
                 INDEX += BYTECODE_STATEMENT_SIZE;
 
 
-                JRM->TOTAL_SOC = INDEX / BYTECODE_STATEMENT_SIZE;
+                JRM->TOTAL_STATEMENT_COUNT = INDEX / BYTECODE_STATEMENT_SIZE;
 
 
                 JRM->REGISTER_LIST[RDP] = INDEX;
@@ -254,12 +254,12 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (RETURN) :
                         {
 
-                                const unsigned long STATEMENT_NUMBER = JRM.REGISTER_LIST[RRS];
+                                const unsigned long STATEMENT_INDEX = JRM.REGISTER_LIST[RRS];
 
 
                                 #if !defined (UNFETTERED)
 
-                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        if (STATEMENT_INDEX >= JRM.TOTAL_STATEMENT_COUNT)
                                         {
 
                                                 JRM.EXIT_CODE = 4;
@@ -273,7 +273,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.CODE_INDEX = STATEMENT_INDEX * BYTECODE_STATEMENT_SIZE;
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
@@ -297,12 +297,12 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (JUMP) :
                         {
 
-                                const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long STATEMENT_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 #if !defined (UNFETTERED)
 
-                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        if (STATEMENT_INDEX >= JRM.TOTAL_STATEMENT_COUNT)
                                         {
 
                                                 JRM.EXIT_CODE = 4;
@@ -316,7 +316,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.CODE_INDEX = STATEMENT_INDEX * BYTECODE_STATEMENT_SIZE;
+
+
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
@@ -328,12 +330,12 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CALL) :
                         {
 
-                                const unsigned long STATEMENT_NUMBER = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long STATEMENT_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 #if !defined (UNFETTERED)
 
-                                        if (STATEMENT_NUMBER == 0 || STATEMENT_NUMBER > JRM.TOTAL_SOC)
+                                        if (STATEMENT_INDEX >= JRM.TOTAL_STATEMENT_COUNT)
                                         {
 
                                                 JRM.EXIT_CODE = 4;
@@ -348,7 +350,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 2;
-                                JRM.CODE_INDEX = (STATEMENT_NUMBER - 1) * BYTECODE_STATEMENT_SIZE;
+                                JRM.CODE_INDEX = (STATEMENT_INDEX - 1) * BYTECODE_STATEMENT_SIZE;
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 

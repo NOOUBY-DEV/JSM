@@ -9,11 +9,11 @@ SET RG9 1000000;
 // [S7]
 CMPL RG8 RG9;
 {
-        JUMP 10;
+        JUMP 9;
 }
 // ELSE
 {
-        JUMP 22;
+        JUMP 21;
         SET RG1 RG8;
         SET RG2 RG1;
         ADD RG2 1;
@@ -25,7 +25,7 @@ CMPL RG8 RG9;
         CMPH RG3 1000000;
         SET RG3 0;
         ADD RG8 1;
-        JUMP 7;
+        JUMP 6;
 }
 
 // [S22]

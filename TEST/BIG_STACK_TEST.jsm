@@ -16,7 +16,7 @@ SET RG4 RG1;        // COPY COUNTER TO RG4
 MOD RG4 2;          // RG4 % 2 (CHECK IF EVEN)
 
 CMPE RG4 0;         // IF RG4 == 0 (EVEN)
-JUMP 16;            // JUMP TO EVEN PATH
+JUMP 15;            // JUMP TO EVEN PATH
 
 ADD RG3 1;          // ODD: ACCUMULATOR += 1
 SKIP;               // SKIP THE EVEN PATH
@@ -27,7 +27,7 @@ POPQ RG3;           // POP ACCUMULATOR
 
 ADD RG1 1;          // INCREMENT COUNTER
 CMPL RG1 RG2;       // IF RG1 < RG2
-JUMP 4;             // JUMP BACK TO LOOP START
+JUMP 3;             // JUMP BACK TO LOOP START
 
 EXIT 0;
 END;
