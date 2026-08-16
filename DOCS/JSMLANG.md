@@ -297,8 +297,11 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **RG9** | **`GENERAL`** | \ |
 | **RJM** | **`JRMCALL`**| **`JRMCALL`** mode |
 | **RJ1** | **`JRMCALL`**| **`JRMCALL`** argument 1 |
-| **RJ2** | **`JRMCALL`**| **`JRMCALL`** argument  2|
+| **RJ2** | **`JRMCALL`**| **`JRMCALL`** argument 2 |
 | **RJ3** | **`JRMCALL`**| **`JRMCALL`** argument 3 |
+| **RJ4** | **`JRMCALL`**| **`JRMCALL`** argument 4 |
+| **RJ5** | **`JRMCALL`**| **`JRMCALL`** argument 5 |
+| **RJ6** | **`JRMCALL`**| **`JRMCALL`** argument 6 |
 
 
 <br>
