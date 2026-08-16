@@ -1198,7 +1198,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                if (WRITE_INDEX < JRM.REGISTER_LIST[RDB] || WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1225,7 +1225,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                if (WRITE_INDEX < JRM.REGISTER_LIST[RDB] || WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1252,7 +1252,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                if (WRITE_INDEX < JRM.REGISTER_LIST[RDB] || WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
@@ -1279,7 +1279,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
+                                if (WRITE_INDEX < JRM.REGISTER_LIST[RDB] || WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
                                 {
 
                                         JRM.EXIT_CODE = 11;
