@@ -217,6 +217,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 JRM.EXIT_CODE = 7;
+
+
                                 JSM__EXIT(&JRM);
 
 
@@ -540,6 +542,66 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (INC) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] ++;
+
+
+                                break;
+
+                        }
+
+
+                        case (DEC) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] --;
 
 
                                 break;

@@ -32,6 +32,8 @@ enum INSTRUCTIONS_ENUM
         MUL,
         DIV,
         MOD,
+        INC,
+        DEC,
         CMPE,
         CMPH,
         CMPL,

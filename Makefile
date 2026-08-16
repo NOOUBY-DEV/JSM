@@ -1,5 +1,5 @@
 C_FLAGS = -I./JSM
-GCC_FLAGS = -g -O2 -frandom-seed=18
+GCC_FLAGS = -g -O2
 # -DUNFETTERED
 #-Ofast
 

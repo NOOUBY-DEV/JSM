@@ -39,6 +39,8 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"MUL", 2},
         {"DIV", 2},
         {"MOD", 2},
+        {"INC", 1},
+        {"DEC", 1},
         {"CMPE", 2},
         {"CMPH", 2},
         {"CMPL", 2},
