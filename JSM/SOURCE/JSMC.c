@@ -81,10 +81,6 @@ const char* REGISTER_STRINGS[] =
         "RWA",
         "RRS",
         "RRV",
-        "RSM",
-        "RS1",
-        "RS2",
-        "RS3",
         "RG1",
         "RG2",
         "RG3",
@@ -98,6 +94,16 @@ const char* REGISTER_STRINGS[] =
         "RJ1",
         "RJ2",
         "RJ3",
+        "RJ4",
+        "RJ5",
+        "RJ6",
+        "RSM",
+        "RS1",
+        "RS2",
+        "RS3",
+        "RS4",
+        "RS5",
+        "RS6",
         NULL
 };
 

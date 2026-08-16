@@ -73,10 +73,6 @@ enum REGISTERS_ENUM
         RWA,
         RRS,
         RRV,
-        RSM,
-        RS1,
-        RS2,
-        RS3,
         RG1,
         RG2,
         RG3,
@@ -90,6 +86,16 @@ enum REGISTERS_ENUM
         RJ1,
         RJ2,
         RJ3,
+        RJ4,
+        RJ5,
+        RJ6,
+        RSM,
+        RS1,
+        RS2,
+        RS3,
+        RS4,
+        RS5,
+        RS6,
         REGISTER_COUNT
 
 };
