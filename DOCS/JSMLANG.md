@@ -327,6 +327,7 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **RWA** | **`GENERAL`, `PLACEHOLDER`** | `WRITE` address/index |
 | **RRS** | **`RETURN`** | The jump statement number for `RETURN`|
 | **RRV** | **`GENERAL`, `PLACEHOLDER`** | `RETURN`'s value |
+| **RPA** | **`MEMORY`** | The raw JRM program space address |
 | **RG1** | **`GENERAL`** | \ |
 | **RG2** | **`GENERAL`** | \ |
 | **RG3** | **`GENERAL`** | \ |
@@ -336,14 +337,22 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **RG7** | **`GENERAL`** | \ |
 | **RG8** | **`GENERAL`** | \ |
 | **RG9** | **`GENERAL`** | \ |
-| **RJM** | **`JRMCALL`**| **`JRMCALL`** mode |
-| **RJ1** | **`JRMCALL`**| **`JRMCALL`** argument 1 |
-| **RJ2** | **`JRMCALL`**| **`JRMCALL`** argument 2 |
-| **RJ3** | **`JRMCALL`**| **`JRMCALL`** argument 3 |
-| **RJ4** | **`JRMCALL`**| **`JRMCALL`** argument 4 |
-| **RJ5** | **`JRMCALL`**| **`JRMCALL`** argument 5 |
-| **RJ6** | **`JRMCALL`**| **`JRMCALL`** argument 6 |
-| **RPA** | **`MEMORY`** | The raw JRM program space address |
+| **RJM** | **`JRMCALL`** | **`JRMCALL`** mode |
+| **RJR** | **`JRMCALL`** | **`JRMCALL`** return value |
+| **RJ1** | **`JRMCALL`** | **`JRMCALL`** argument 1 |
+| **RJ2** | **`JRMCALL`** | **`JRMCALL`** argument 2 |
+| **RJ3** | **`JRMCALL`** | **`JRMCALL`** argument 3 |
+| **RJ4** | **`JRMCALL`** | **`JRMCALL`** argument 4 |
+| **RJ5** | **`JRMCALL`** | **`JRMCALL`** argument 5 |
+| **RJ6** | **`JRMCALL`** | **`JRMCALL`** argument 6 |
+| **RSM** | **`SYSCALL`** | **`SYSCALL`** mode |
+| **RSR** | **`SYSCALL`** | **`SYSCALL`** return value |
+| **RS1** | **`SYSCALL`** | **`SYSCALL`** argument 1 |
+| **RS2** | **`SYSCALL`** | **`SYSCALL`** argument 2 |
+| **RS3** | **`SYSCALL`** | **`SYSCALL`** argument 3 |
+| **RS4** | **`SYSCALL`** | **`SYSCALL`** argument 4 |
+| **RS5** | **`SYSCALL`** | **`SYSCALL`** argument 5 |
+| **RS6** | **`SYSCALL`** | **`SYSCALL`** argument 6 |
 
 
 <br>

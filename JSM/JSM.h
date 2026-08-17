@@ -94,6 +94,7 @@ enum REGISTERS_ENUM
         RG8,
         RG9,
         RJM,
+        RJR,
         RJ1,
         RJ2,
         RJ3,
