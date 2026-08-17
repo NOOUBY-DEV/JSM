@@ -209,7 +209,7 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 
 **Memory instructions**
 
-> **PUSH, POP, LOAD, WRITE series**
+> **PUSH, POP, LOAD, WRITE, VPLOAD, VPWRITE series**
 
 
 - **PUSH**
@@ -239,19 +239,6 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **POPB** | 1 | `POPB RG1;` |
 
 
----
-
-- **WRITE**
-
-> Writes in the program memory space by a number of **Bytes** into a register (operand 1) starting from the index (operand 2)
-
-| Instruction | Bytes | Example 1 | Example 2 |
-|--- | :---: |--- |--- |
-| **WRITEQ** | 8 | `WRITEQ 14 RHP;` | `WRITEQ RG1 RSB;` |
-| **WRITED** | 4 | `WRITED 14 RHP;` | `WRITED RG1 RSB;` |
-| **WRITEW** | 2 | `WRITEW 14 RHP;` | `WRITEW RG1 RSB;` |
-| **WRITEB** | 1 | `WRITEB 14 RHP;` | `WRITEB RG1 RSB;` |
-
 
 ---
 
@@ -266,6 +253,58 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **LOADD** | 4 | `LOADD RG1 RDP;` |
 | **LOADW** | 2 | `LOADW RG1 RDP;` |
 | **LOADB** | 1 | `LOADB RG1 RDP;` |
+
+
+
+---
+
+
+
+- **WRITE**
+
+> Writes in the program memory space by a number of **Bytes** into a register (operand 1) starting from the index (operand 2)
+
+| Instruction | Bytes | Example 1 | Example 2 |
+|--- | :---: |--- |--- |
+| **WRITEQ** | 8 | `WRITEQ 14 RHP;` | `WRITEQ RG1 RSB;` |
+| **WRITED** | 4 | `WRITED 14 RHP;` | `WRITED RG1 RSB;` |
+| **WRITEW** | 2 | `WRITEW 14 RHP;` | `WRITEW RG1 RSB;` |
+| **WRITEB** | 1 | `WRITEB 14 RHP;` | `WRITEB RG1 RSB;` |
+
+
+
+---
+
+
+- **VPLOAD**
+
+> Loads a number of **Bytes** into a register (operand 1) from a raw address (operand 2)
+> **`VOILATILE!`** Using this instruction is a contract, if a bad address is provided, the **JRM** will segfault
+
+| Instruction | Bytes | Example |
+|--- | :---: |--- |
+| **VPLOADQ** | 8 | `VPLOADQ RG1 RG2;` |
+| **VPLOADD** | 4 | `VPLOADD RG1 RG2;` |
+| **VPLOADW** | 2 | `VPLOADW RG1 RG2;` |
+| **VPLOADB** | 1 | `VPLOADB RG1 RG2;` |
+
+
+
+---
+
+
+
+- **VPWRITE**
+
+> Writes in the program memory space by a number of **Bytes** into a register (operand 1) from a raw address (operand 2)
+> **`VOILATILE!`** Using this instruction is a contract, if a bad address is provided, the **JRM** will segfault
+
+| Instruction | Bytes | Example 1 | Example 2 |
+|--- | :---: |--- |--- |
+| **VPWRITEQ** | 8 | `VPWRITEQ 14 RG1;` | `VPWRITEQ RG1 RG2;` |
+| **VPWRITED** | 4 | `VPWRITED 14 RG1;` | `VPWRITED RG1 RG2;` |
+| **VPWRITEW** | 2 | `VPWRITEW 14 RG1;` | `VPWRITEW RG1 RG2;` |
+| **VPWRITEB** | 1 | `VPWRITEB 14 RG1;` | `VPWRITEB RG1 RG2;` |
 
 
 <br>
@@ -304,6 +343,7 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **RJ4** | **`JRMCALL`**| **`JRMCALL`** argument 4 |
 | **RJ5** | **`JRMCALL`**| **`JRMCALL`** argument 5 |
 | **RJ6** | **`JRMCALL`**| **`JRMCALL`** argument 6 |
+| **RPA** | **`MEMORY`** | The raw JRM program space address |
 
 
 <br>

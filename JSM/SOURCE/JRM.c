@@ -1,7 +1,38 @@
 #include "../JSM.h"
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
+
+
+// [INCLUDES]
+//
+
+        #include <stddef.h>
+        #include <stdio.h>
+        #include <stdlib.h>
+
+
+        #if defined(__linux__)
+        //
+
+                #include <unistd.h>
+                #include <sys/syscall.h>
+
+        //
+        #elif defined(__WIN32)
+        //
+
+                #include <windows.h>
+
+        //
+        #elif defined(__APPLE__)
+        //
+
+                #define _DARWIN_C_SOURCE
+                #include <unistd.h>
+                #include <sys/syscall.h>
+
+        //
+        #endif
+
+//
 
 
 
@@ -199,6 +230,13 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
 
                 }
                 #endif
+
+        }
+
+        // [SET RPA]
+        {
+
+                JRM->REGISTER_LIST[RPA] = (unsigned long)JRM->MEMORY_SPACE;
 
         }
 
@@ -1490,6 +1528,286 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         break;
 
                                 }
+
+                        }
+
+
+                        case (VPLOADQ) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned long* LOAD_ADDRESS = (const unsigned long*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPLOADD) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned int* LOAD_ADDRESS = (const unsigned int*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPLOADW) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned short* LOAD_ADDRESS = (const unsigned short*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPLOADB) :
+                        {
+
+                                const unsigned long REGISTER = JRM.OPERAND_1;
+                                const unsigned char* LOAD_ADDRESS = (const unsigned char*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                if (LOAD_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPWRITEQ) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                unsigned long* WRITE_ADDRESS = (unsigned long*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                if (WRITE_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *WRITE_ADDRESS = WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPWRITED) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                unsigned int* WRITE_ADDRESS = (unsigned int*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                if (WRITE_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *WRITE_ADDRESS = (unsigned int)WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPWRITEW) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                unsigned short* WRITE_ADDRESS = (unsigned short*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                if (WRITE_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *WRITE_ADDRESS = (unsigned short)WRITE_VALUE;
+
+
+                                break;
+
+                        }
+
+
+                        case (VPWRITEB) :
+                        {
+
+                                const unsigned long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                unsigned char* WRITE_ADDRESS = (unsigned char*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
+
+
+                                if (WRITE_ADDRESS == NULL)
+                                {
+
+                                        JRM.EXIT_CODE = 11;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                *WRITE_ADDRESS = (unsigned char)WRITE_VALUE;
+
+
+                                break;
 
                         }
 
