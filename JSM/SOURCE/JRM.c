@@ -1815,7 +1815,13 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (SYSCALL) :
                         {
 
-                                JRM.REGISTER_LIST[RSR] = syscall(JRM.REGISTER_LIST[RSM], JRM.REGISTER_LIST[RS1], JRM.REGISTER_LIST[RS2], JRM.REGISTER_LIST[RS3], JRM.REGISTER_LIST[RS4], JRM.REGISTER_LIST[RS5], JRM.REGISTER_LIST[RS6]);
+                                #if !defined (__WIN32)
+                                {
+
+                                        JRM.REGISTER_LIST[RSR] = syscall(JRM.REGISTER_LIST[RSM], JRM.REGISTER_LIST[RS1], JRM.REGISTER_LIST[RS2], JRM.REGISTER_LIST[RS3], JRM.REGISTER_LIST[RS4], JRM.REGISTER_LIST[RS5], JRM.REGISTER_LIST[RS6]);
+
+                                }
+                                #endif
 
                         }
 

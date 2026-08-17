@@ -59,3 +59,9 @@ LAZYRUN:
 JRM:
 	@clear
 	@./$(OUTPUT_FOLDER)/JRM $(ARGS)
+
+
+
+GET_JRM_ASM:
+	@clear
+	@gcc -S -O2 -g -fverbose-asm JSM/SOURCE/JRM.c -o JRM.s
