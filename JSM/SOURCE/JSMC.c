@@ -62,9 +62,6 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"WRITED", 2},
         {"WRITEW", 2},
         {"WRITEB", 2},
-        {"VERFH", 2},
-        {"HALLOC", 1},
-        {"JRMCALL", 0},
         {"VPLOADQ", 2},
         {"VPLOADD", 2},
         {"VPLOADW", 2},
@@ -73,6 +70,10 @@ const INTRUCTION__STRING_TO_REQUIRED_OPERANDS INSTRUCTION_STRINGS_LIST[] =
         {"VPWRITED", 2},
         {"VPWRITEW", 2},
         {"VPWRITEB", 2},
+        {"VERFH", 2},
+        {"HALLOC", 1},
+        {"JRMCALL", 0},
+        {"SYSCALL", 0},
         {NULL, NONE}
 
 
@@ -108,6 +109,7 @@ const char* REGISTER_STRINGS[] =
         "RJ5",
         "RJ6",
         "RSM",
+        "RSR",
         "RS1",
         "RS2",
         "RS3",

@@ -55,9 +55,6 @@ enum INSTRUCTIONS_ENUM
         WRITED,
         WRITEW,
         WRITEB,
-        VERFH,
-        HALLOC,
-        JRMCALL,
         VPLOADQ,
         VPLOADD,
         VPLOADW,
@@ -66,6 +63,10 @@ enum INSTRUCTIONS_ENUM
         VPWRITED,
         VPWRITEW,
         VPWRITEB,
+        VERFH,
+        HALLOC,
+        JRMCALL,
+        SYSCALL,
         INSTRUCTION_COUNT
 };
 
@@ -100,6 +101,7 @@ enum REGISTERS_ENUM
         RJ5,
         RJ6,
         RSM,
+        RSR,
         RS1,
         RS2,
         RS3,

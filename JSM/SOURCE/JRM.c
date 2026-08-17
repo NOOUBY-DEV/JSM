@@ -1369,169 +1369,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         }
 
 
-                        case (VERFH) :
-                        {
-
-                                const unsigned long INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-                                if (INDEX >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - INDEX)
-                                {
-
-                                        JRM.EXIT_CODE = 8;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
-
-
-                                break;
-
-                        }
-
-
-                        case (HALLOC) :
-                        {
-
-                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long CURRENT_RHP = JRM.REGISTER_LIST[RHP];
-
-
-                                if (CURRENT_RHP >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - CURRENT_RHP)
-                                {
-
-                                        JRM.EXIT_CODE = 8;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
-
-
-                                JRM.REGISTER_LIST[RHP] += SIZE;
-
-
-                                break;
-
-                        }
-
-
-                        case (JRMCALL) :
-                        {
-
-                                const unsigned long CURRENT_RJM = JRM.REGISTER_LIST[RJM];
-
-
-                                switch (CURRENT_RJM)
-                                {
-
-                                        case (1) : goto PRINT;
-                                        default: break;
-
-                                }
-
-
-                                // [BREAK BEFORE IT REACHES THE GOTOS]
-                                {
-
-                                        break;
-
-                                }
-
-
-                                PRINT:
-                                {
-
-                                        long VALID = TRUE;
-
-
-                                        const unsigned long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
-                                        unsigned long PRINT_LENGTH = JRM.REGISTER_LIST[RJ2];
-
-
-
-                                        if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE)
-                                        {
-
-                                                JRM.EXIT_CODE = 11;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-
-                                        if (PRINT_LENGTH == 0)
-                                        {
-
-                                                size_t INDEX;
-
-
-                                                for (INDEX = STARTING_INDEX; JRM.MEMORY_SPACE[INDEX] != '\0' && INDEX < JRM.MEMORY_SPACE_SIZE; INDEX ++, PRINT_LENGTH ++);
-
-
-                                                if (INDEX == JRM.MEMORY_SPACE_SIZE)
-                                                {
-
-                                                        VALID = FALSE;
-
-                                                }
-
-                                        }
-                                        else
-                                        {
-
-                                                if (PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE - STARTING_INDEX)
-                                                {
-
-                                                        VALID = FALSE;
-
-                                                }
-
-                                        }
-
-
-                                        if (!VALID)
-                                        {
-
-                                                JRM.EXIT_CODE = 11;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-
-                                        // [PRINT STRING]
-                                        {
-
-                                                const size_t LAST_CHAR_INDEX = STARTING_INDEX + PRINT_LENGTH;
-
-                                                const char LAST_CHAR = JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ];
-
-
-                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = '\0';
-
-                                                printf("%s", JRM.MEMORY_SPACE + STARTING_INDEX);
-
-                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = LAST_CHAR;
-
-                                        }
-
-
-                                        break;
-
-                                }
-
-                        }
-
-
                         case (VPLOADQ) :
                         {
 
@@ -1808,6 +1645,177 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 break;
+
+                        }
+
+
+                        case (VERFH) :
+                        {
+
+                                const unsigned long INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                if (INDEX >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - INDEX)
+                                {
+
+                                        JRM.EXIT_CODE = 8;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                break;
+
+                        }
+
+
+                        case (HALLOC) :
+                        {
+
+                                const unsigned long SIZE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long CURRENT_RHP = JRM.REGISTER_LIST[RHP];
+
+
+                                if (CURRENT_RHP >= JRM.START_PLUS_HEAP_SIZE || SIZE >= JRM.START_PLUS_HEAP_SIZE - CURRENT_RHP)
+                                {
+
+                                        JRM.EXIT_CODE = 8;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.REGISTER_LIST[RHP] += SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (JRMCALL) :
+                        {
+
+                                const unsigned long CURRENT_RJM = JRM.REGISTER_LIST[RJM];
+
+
+                                switch (CURRENT_RJM)
+                                {
+
+                                        case (1) : goto PRINT;
+                                        default: break;
+
+                                }
+
+
+                                // [BREAK BEFORE IT REACHES THE GOTOS]
+                                {
+
+                                        break;
+
+                                }
+
+
+                                PRINT:
+                                {
+
+                                        long VALID = TRUE;
+
+
+                                        const unsigned long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
+                                        unsigned long PRINT_LENGTH = JRM.REGISTER_LIST[RJ2];
+
+
+
+                                        if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (PRINT_LENGTH == 0)
+                                        {
+
+                                                size_t INDEX;
+
+
+                                                for (INDEX = STARTING_INDEX; JRM.MEMORY_SPACE[INDEX] != '\0' && INDEX < JRM.MEMORY_SPACE_SIZE; INDEX ++, PRINT_LENGTH ++);
+
+
+                                                if (INDEX == JRM.MEMORY_SPACE_SIZE)
+                                                {
+
+                                                        VALID = FALSE;
+
+                                                }
+
+                                        }
+                                        else
+                                        {
+
+                                                if (PRINT_LENGTH >= JRM.MEMORY_SPACE_SIZE - STARTING_INDEX)
+                                                {
+
+                                                        VALID = FALSE;
+
+                                                }
+
+                                        }
+
+
+                                        if (!VALID)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        // [PRINT STRING]
+                                        {
+
+                                                const size_t LAST_CHAR_INDEX = STARTING_INDEX + PRINT_LENGTH;
+
+                                                const char LAST_CHAR = JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ];
+
+
+                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = '\0';
+
+                                                printf("%s", JRM.MEMORY_SPACE + STARTING_INDEX);
+
+                                                JRM.MEMORY_SPACE[ LAST_CHAR_INDEX ] = LAST_CHAR;
+
+                                        }
+
+
+                                        break;
+
+                                }
+
+                        }
+
+
+                        case (SYSCALL) :
+                        {
+
+                                JRM.REGISTER_LIST[RSR] = syscall(JRM.REGISTER_LIST[RSM], JRM.REGISTER_LIST[RS1], JRM.REGISTER_LIST[RS2], JRM.REGISTER_LIST[RS3], JRM.REGISTER_LIST[RS4], JRM.REGISTER_LIST[RS5], JRM.REGISTER_LIST[RS6]);
 
                         }
 
