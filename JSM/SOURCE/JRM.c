@@ -171,6 +171,38 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
         }
 
 
+        // [SET RST]
+        {
+
+                #if defined (__linux__)
+                {
+
+                        JRM->REGISTER_LIST[RST] = 1;
+
+                }
+                #elif defined (__WIN32)
+                {
+
+                        JRM->REGISTER_LIST[RST] = 2;
+
+                }
+                #elif defined(__APPLE__) && defined(__MACH__)
+                {
+
+                        JRM->REGISTER_LIST[RST] = 3;
+
+                }
+                #else
+                {
+
+                        JRM->REGISTER_LIST[RST] = 0;
+
+                }
+                #endif
+
+        }
+
+
         // [SET / RESET RUNTIME DATA]
         {
 

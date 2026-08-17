@@ -98,6 +98,7 @@ enum REGISTERS_ENUM
         RS4,
         RS5,
         RS6,
+        RST,
         REGISTER_COUNT
 
 };

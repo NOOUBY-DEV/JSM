@@ -106,6 +106,7 @@ const char* REGISTER_STRINGS[] =
         "RS4",
         "RS5",
         "RS6",
+        "RST",
         NULL
 };
 
