@@ -1821,6 +1821,45 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         JRM.REGISTER_LIST[RSR] = syscall(JRM.REGISTER_LIST[RSM], JRM.REGISTER_LIST[RS1], JRM.REGISTER_LIST[RS2], JRM.REGISTER_LIST[RS3], JRM.REGISTER_LIST[RS4], JRM.REGISTER_LIST[RS5], JRM.REGISTER_LIST[RS6]);
 
                                 }
+                                #elif defined (__MINGW32__)
+                                {
+
+                                        // - ARGS[1] -> JRM.REGISTER_LIST[RS1] -
+                                        unsigned long long* ARGS = &JRM.REGISTER_LIST[RS1 - 1];
+
+
+                                        __asm__ volatile
+                                        (
+
+                                                "sub $0x38, %%rsp        \n\t" // ALLOCATE EXTRA SPACE FOR ARGS 4 - 6
+                                                "movq %7, %%r10          \n\t" // MOVE RSM TO %R10
+                                                "movq %7, %%rcx          \n\t" // MOVE RSM TO %RCX AS A BACKUP FOR WINDOWS
+                                                "movq %1, %%rdx          \n\t" // MOVE ARGS[1] INTO %RDX
+                                                "movq %2, %%r8           \n\t" // MOVE ARGS[2] INTO %R8
+                                                "movq %3, %%r9           \n\t" // MOVE ARGS[3] INTO %R9
+                                                "movq %4, 0x20(%%rsp)    \n\t" // MOVE ARGS[4] INTO *(RSP + 32)
+                                                "movq %5, 0x28(%%rsp)    \n\t" // MOVE ARGS[5] INTO *(RSP + 40)
+                                                "movq %6, 0x30(%%rsp)    \n\t" // MOVE ARGS[6] INTO *(RSP + 48)
+
+                                                "syscall                 \n\t"
+
+                                                "movq %%rax, %0          \n\t" // MOVE RAX (RETURN) INTO VIRTUAL RSR
+
+
+                                                :       "=r" (JRM.REGISTER_LIST[RSR])
+                                                :       "r" (ARGS[1]),
+                                                        "r" (ARGS[2]),
+                                                        "r" (ARGS[3]),
+                                                        "r" (ARGS[4]),
+                                                        "r" (ARGS[5]),
+                                                        "r" (ARGS[6]),
+                                                        "r" (JRM.REGISTER_LIST[RSM])
+
+                                                :       "rcx", "r10", "rdx", "r8", "r9", "memory"
+
+                                        );
+
+                                }
                                 #endif
 
                         }
