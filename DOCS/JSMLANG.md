@@ -180,8 +180,8 @@ SUB RG1 4;    // THIS EXECUTED IF FALSE
 | **DEC** | Decrements a register by 1 | ```DEC RG1;``` | \ |
 | **JUMP** | Jumps to a statement (0-based) | ```JUMP 14;``` | ```JUMP RG1;``` |
 | **SKIP** | Skips to the next instruction | ```SKIP;``` | \ |
-| **CALL**| Jumps to a statement and sets register **RRS** to the next statment | ```CALL 14;``` | ```CALL RG1;``` |
-| **RETURN** | Returns/Jumps to the statement from register **RRS** | ```RETURN;``` | \ |
+| **CALL**| Jumps to a statement and auto pushes the previous `RSB` and return statement | ```CALL 14;``` | ```CALL RG1;``` |
+| **RETURN** | Returns to the statement and retrieves the old `RSB` (relative to current `RSB`) | ```RETURN;``` | \ |
 | **EXIT** | **```MANDATORY!```** Exits the program with a code | ```EXIT 0;``` | ```EXIT RG1;``` |
 | **END**| **```MANDATORY!```** Marks the **end of code**, data section is below | ```END;``` | \ |
 | **JRMCALL** | Calls the **JRM** for OS level operations (eg. print) | ```JRMCALL;``` | \ |
