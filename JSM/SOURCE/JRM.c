@@ -649,6 +649,96 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         }
 
 
+                        case (INCQ) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] += QUAD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (INCD) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] += DOUBLE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (INCW) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] += WORD_SIZE;
+
+
+                                break;
+
+                        }
+
+
                         case (DEC) :
                         {
 
@@ -672,6 +762,96 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 JRM.REGISTER_LIST[REGISTER] --;
+
+
+                                break;
+
+                        }
+
+
+                        case (DECQ) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] -= QUAD_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (DECD) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] -= DOUBLE_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (DECW) :
+                        {
+
+                                const unsigned long long REGISTER = JRM.OPERAND_1;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (REGISTER >= REGISTER_COUNT)
+                                        {
+
+                                                JRM.EXIT_CODE = 5;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                JRM.REGISTER_LIST[REGISTER] -= WORD_SIZE;
 
 
                                 break;
@@ -1824,40 +2004,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #elif defined (__MINGW32__)
                                 {
 
-                                        // - ARGS[1] -> JRM.REGISTER_LIST[RS1] -
-                                        unsigned long long* ARGS = &JRM.REGISTER_LIST[RS1 - 1];
-
-
-                                        __asm__ volatile
-                                        (
-
-                                                "sub $0x38, %%rsp        \n\t" // ALLOCATE EXTRA SPACE FOR ARGS 4 - 6
-                                                "movq %7, %%r10          \n\t" // MOVE RSM TO %R10
-                                                "movq %7, %%rcx          \n\t" // MOVE RSM TO %RCX AS A BACKUP FOR WINDOWS
-                                                "movq %1, %%rdx          \n\t" // MOVE ARGS[1] INTO %RDX
-                                                "movq %2, %%r8           \n\t" // MOVE ARGS[2] INTO %R8
-                                                "movq %3, %%r9           \n\t" // MOVE ARGS[3] INTO %R9
-                                                "movq %4, 0x20(%%rsp)    \n\t" // MOVE ARGS[4] INTO *(RSP + 32)
-                                                "movq %5, 0x28(%%rsp)    \n\t" // MOVE ARGS[5] INTO *(RSP + 40)
-                                                "movq %6, 0x30(%%rsp)    \n\t" // MOVE ARGS[6] INTO *(RSP + 48)
-
-                                                "syscall                 \n\t"
-
-                                                "movq %%rax, %0          \n\t" // MOVE RAX (RETURN) INTO VIRTUAL RSR
-
-
-                                                :       "=r" (JRM.REGISTER_LIST[RSR])
-                                                :       "r" (ARGS[1]),
-                                                        "r" (ARGS[2]),
-                                                        "r" (ARGS[3]),
-                                                        "r" (ARGS[4]),
-                                                        "r" (ARGS[5]),
-                                                        "r" (ARGS[6]),
-                                                        "r" (JRM.REGISTER_LIST[RSM])
-
-                                                :       "rcx", "r10", "rdx", "r8", "r9", "memory"
-
-                                        );
+                                        // - TODO : IDK BECAUSE WINDOWS DOESNT EVEN HAVE A STANDARD ABI, WHICH PISSES ME OFF -
 
                                 }
                                 #endif
