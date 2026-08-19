@@ -14,11 +14,17 @@
 
                 #include <unistd.h>
                 #include <sys/syscall.h>
+                #include <termios.h>
+                #include <unistd.h>
+                #include <sys/select.h>
 
         //
         #elif defined(__WIN32)
         //
 
+                #include <windows.h>
+                #include <io.h>
+                #include <conio.h>
                 #include <windows.h>
 
         //
@@ -28,12 +34,25 @@
                 #define _DARWIN_C_SOURCE
                 #include <unistd.h>
                 #include <sys/syscall.h>
+                #include <termios.h>
+                #include <unistd.h>
+                #include <sys/select.h>
 
         //
         #endif
 
 //
 
+
+#ifdef _WIN32
+    #include <io.h>
+    #include <conio.h>
+    #include <windows.h>
+#else
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/select.h>
+#endif
 
 
 
@@ -104,6 +123,11 @@ void JRM_LOG_ERROR(JRM_DATA* JRM, const char* MESSAGE);
 void LOG_PRELOAD_ERROR(const char* MESSAGE);
 
 void JSM__EXIT(JRM_DATA* JRM);
+
+static inline unsigned char PRESSED_KEY();
+
+void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH);
+
 
 
 int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
@@ -957,16 +981,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+                                #endif
 
 
                                 *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
@@ -988,16 +1016,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+                                #endif
 
 
                                 *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
@@ -1019,16 +1051,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+                                #endif
 
 
                                 *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
@@ -1050,16 +1086,21 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
 
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                #if !defined (UNFETTERED)
 
 
-                                        break;
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
+                                        {
 
-                                }
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 JRM.MEMORY_SPACE[CURRENT_RSP] = VALUE;
@@ -1093,19 +1134,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < QUAD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 CURRENT_RSP -= QUAD_SIZE;
@@ -1142,19 +1183,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < DOUBLE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < DOUBLE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 CURRENT_RSP -= DOUBLE_SIZE;
@@ -1191,19 +1232,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < WORD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < WORD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 CURRENT_RSP -= WORD_SIZE;
@@ -1240,19 +1281,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < BYTE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < BYTE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 CURRENT_RSP -= BYTE_SIZE;
@@ -1889,8 +1930,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 switch (CURRENT_RJM)
                                 {
 
-                                        case (1) : goto PRINT;
-                                        default: break;
+                                        case 1 : goto PRINT;
+                                        case 2 : goto INPTBUFF;
+                                        default : break;
 
                                 }
 
@@ -1989,6 +2031,41 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                 }
 
+
+                                INPTBUFF:
+                                {
+
+                                        const unsigned long long STARTING_INDEX = JRM.REGISTER_LIST[RJ1];
+                                        const unsigned long long MAX_INPUT_SIZE = JRM.REGISTER_LIST[RJ2];
+
+
+                                        if (MAX_INPUT_SIZE == 0)
+                                        {
+
+                                                break;
+
+                                        }
+
+
+                                        if (STARTING_INDEX >= JRM.MEMORY_SPACE_SIZE - MAX_INPUT_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        INPUT_TO_BUFFER(JRM.MEMORY_SPACE + STARTING_INDEX, MAX_INPUT_SIZE);
+
+
+                                        break;
+
+                                }
+
                         }
 
 
@@ -2040,6 +2117,110 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         return JSM_OK;
 
 }
+
+
+static inline unsigned char PRESSED_KEY()
+{
+
+        struct termios OLD_T, NEW_T;
+
+        char KEY;
+
+        tcgetattr(STDIN_FILENO, &OLD_T);
+
+        NEW_T = OLD_T;
+
+        NEW_T.c_lflag &= ~(ICANON | ECHO);
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &NEW_T);
+
+        KEY = (char)getchar();
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &OLD_T);
+
+
+        return KEY;
+
+}
+
+
+void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH)
+{
+
+        size_t INDEX = 0;
+
+
+        BUFFER[0] = '\0';
+
+
+        fflush(stdout);
+
+
+        while (TRUE)
+        {
+
+                char KEY = PRESSED_KEY();
+
+
+
+                if (KEY == '\n')
+                {
+
+                        fflush(stdout);
+
+
+                        break;
+
+
+                }
+                else if (KEY == '\b' || KEY == 127)
+                {
+
+                        if (INDEX == 0)
+                        {
+
+                                continue;
+
+                        }
+
+
+                        BUFFER[INDEX] = '\0';
+
+
+                        printf("\b \b");
+
+
+                        fflush(stdout);
+
+
+                        INDEX --;
+
+
+                }
+                else if (INDEX < MAX_LENGTH)
+                {
+
+                        BUFFER[INDEX] = KEY;
+                        BUFFER[INDEX + 1] = '\0';
+
+
+                        printf("%c", KEY);
+
+
+                        fflush(stdout);
+
+
+                        INDEX ++;
+
+                }
+
+        }
+
+
+        printf("\n");
+
+}
+
 
 
 void JSM__EXIT(JRM_DATA* JRM)
