@@ -350,7 +350,26 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (RETURN) :
                         {
 
-                                const unsigned long long STATEMENT_INDEX = JRM.REGISTER_LIST[RRS];
+                                const unsigned long long CURRENT_RSB = JRM.REGISTER_LIST[RSB];
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (CURRENT_RSB < (QUAD_SIZE * 2) || CURRENT_RSB >= JRM.MEMORY_SPACE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                const unsigned long long STATEMENT_INDEX = *( (unsigned long long*) (JRM.MEMORY_SPACE + CURRENT_RSB - QUAD_SIZE) );
 
 
                                 #if !defined (UNFETTERED)
@@ -369,8 +388,33 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
+                                const unsigned long long OLD_RSB = *( (unsigned long long*) (JRM.MEMORY_SPACE + CURRENT_RSB - (QUAD_SIZE * 2)) );
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (OLD_RSB >= JRM.MEMORY_SPACE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+
+                                JRM.REGISTER_LIST[RSB] = OLD_RSB;
+                                JRM.REGISTER_LIST[RSP] = CURRENT_RSB - (QUAD_SIZE * 2);
+
+
                                 JRM.CODE_INDEX = STATEMENT_INDEX * BYTECODE_STATEMENT_SIZE;
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
 
 
                                 break;
@@ -427,9 +471,13 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long long STATEMENT_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+                                const unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
+                                const unsigned long long CURRENT_RSB = JRM.REGISTER_LIST[RSB];
+
 
 
                                 #if !defined (UNFETTERED)
+                                {
 
                                         if (STATEMENT_INDEX >= JRM.TOTAL_STATEMENT_COUNT)
                                         {
@@ -442,10 +490,38 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSB >= JRM.MEMORY_SPACE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+                                }
                                 #endif
 
 
-                                JRM.REGISTER_LIST[RRS] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 1;
+                                // [AUTO PUSH DATA]
+                                {
+
+                                        unsigned long long* QUAD__MEMORY_SPACE__AT_RSP = (unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP);
+
+
+                                        QUAD__MEMORY_SPACE__AT_RSP[0] = CURRENT_RSB;  // - PUSHQ RSB; -
+                                        QUAD__MEMORY_SPACE__AT_RSP[1] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 1;  // - PUSHQ <RETURN STATEMENT> -
+
+
+                                        JRM.REGISTER_LIST[RSP] += QUAD_SIZE * 2;  // - AUTO ADD RSP BY 16 -
+                                        JRM.REGISTER_LIST[RSB] = JRM.REGISTER_LIST[RSP];  // - AUTO SET RSB TO THE BASE OF THE NEW STACK FRAME -
+
+                                }
+
+
                                 JRM.CODE_INDEX = STATEMENT_INDEX * BYTECODE_STATEMENT_SIZE;
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
@@ -2119,31 +2195,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 }
 
 
-static inline unsigned char PRESSED_KEY()
-{
-
-        struct termios OLD_T, NEW_T;
-
-        char KEY;
-
-        tcgetattr(STDIN_FILENO, &OLD_T);
-
-        NEW_T = OLD_T;
-
-        NEW_T.c_lflag &= ~(ICANON | ECHO);
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &NEW_T);
-
-        KEY = (char)getchar();
-
-        tcsetattr(STDIN_FILENO, TCSANOW, &OLD_T);
-
-
-        return KEY;
-
-}
-
-
 void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH)
 {
 
@@ -2221,6 +2272,30 @@ void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH)
 
 }
 
+
+static inline unsigned char PRESSED_KEY()
+{
+
+        struct termios OLD_T, NEW_T;
+
+        char KEY;
+
+        tcgetattr(STDIN_FILENO, &OLD_T);
+
+        NEW_T = OLD_T;
+
+        NEW_T.c_lflag &= ~(ICANON | ECHO);
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &NEW_T);
+
+        KEY = (char)getchar();
+
+        tcsetattr(STDIN_FILENO, TCSANOW, &OLD_T);
+
+
+        return KEY;
+
+}
 
 
 void JSM__EXIT(JRM_DATA* JRM)
