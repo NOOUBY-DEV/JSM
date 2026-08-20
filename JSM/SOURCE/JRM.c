@@ -491,7 +491,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         }
 
 
-                                        if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSB >= JRM.MEMORY_SPACE_SIZE)
+                                        const unsigned long long MAX_SIZE = JRM.MEMORY_SPACE_SIZE - (QUAD_SIZE * 2);
+
+
+                                        if (CURRENT_RSP >= MAX_SIZE || CURRENT_RSB >= MAX_SIZE)
                                         {
 
                                                 JRM.EXIT_CODE = 11;
