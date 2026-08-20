@@ -77,8 +77,10 @@
 #endif
 
 
+#define DEBUG
 
-#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) (*(JRM.MEMORY_SPACE + JRM.CODE_INDEX + NUMBER)) ? JRM.REGISTER_LIST[OPERAND] : OPERAND
+
+#define CAST_OPERAND_TO_TYPE(OPERAND, NUMBER) (*(JRM.BYTECODE + JRM.CODE_INDEX + NUMBER)) ? JRM.REGISTER_LIST[OPERAND] : OPERAND
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
 
 
@@ -95,13 +97,14 @@ typedef struct JRM_DATA
         unsigned long long REGISTER_LIST[REGISTER_COUNT];
 
         char* restrict MEMORY_SPACE;
+        char* restrict BYTECODE;
 
         size_t CODE_INDEX;
 
         unsigned long long OPERAND_1;
         unsigned long long OPERAND_2;
 
-        size_t JSM_CURRENT_SOC;
+        unsigned long long JSM_CURRENT_SOC;
 
         size_t MEMORY_SPACE_SIZE;
         size_t START_PLUS_HEAP_SIZE;
@@ -129,18 +132,116 @@ static inline unsigned char PRESSED_KEY();
 void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH);
 
 
-
-int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
+int JRM__INIT(JRM_DATA* JRM, char* restrict CODE, size_t PROGRAM_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
+
+        size_t BYTECODE_SIZE;
+
+
+        // [VERIFY AND CLEAN BYTECODE]
+        {
+
+                JRM->BYTECODE = CODE;
+
+
+                if (PROGRAM_SIZE < BYTECODE_STATEMENT_SIZE)
+                {
+
+                        LOG_PRELOAD_ERROR("INVALID PROGRAM BINARY SIZE");
+
+
+                        free(JRM->MEMORY_SPACE);
+
+
+                        return JSM_ERROR;
+
+                }
+
+
+                size_t INDEX = 0;
+
+
+                for (; CODE[INDEX] != END && INDEX < PROGRAM_SIZE; INDEX += BYTECODE_STATEMENT_SIZE)
+                {
+
+                        char* BYTECODE_STATEMENT = CODE + INDEX;
+                        unsigned long long* OPERANDS = (unsigned long long*)(CODE + INDEX);
+
+
+                        // [CHECK FOR INVALID CODE]
+                        {
+
+                                if (BYTECODE_STATEMENT[0] >= INSTRUCTION_COUNT)
+                                {
+
+                                        LOG_PRELOAD_ERROR("INVALID PROGRAM CONTENT");
+
+
+                                        return JSM_ERROR;
+
+                                }
+
+
+                                if (BYTECODE_STATEMENT[1] && (OPERANDS[1] >= REGISTER_COUNT))
+                                {
+
+                                        LOG_PRELOAD_ERROR("INVALID PROGRAM CONTENT");
+
+
+                                        return JSM_ERROR;
+
+                                }
+
+
+                                if (BYTECODE_STATEMENT[2] && (OPERANDS[2] >= REGISTER_COUNT))
+                                {
+
+                                        LOG_PRELOAD_ERROR("INVALID PROGRAM CONTENT");
+
+
+                                        return JSM_ERROR;
+
+                                }
+
+                        }
+
+
+                        // - CLEAR EMPTY SPACE -
+                        for (size_t CLEAR_INDEX = 3; CLEAR_INDEX < 8; CLEAR_INDEX ++)
+                        {
+
+                                BYTECODE_STATEMENT[CLEAR_INDEX] = 0;
+
+                        }
+
+                }
+
+
+                if (INDEX >= PROGRAM_SIZE)
+                {
+
+                        LOG_PRELOAD_ERROR("MISSING EOC (END OF CODE) FROM PROGRAM BINARY");
+
+
+                        return JSM_ERROR;
+
+                }
+
+
+                BYTECODE_SIZE = INDEX + BYTECODE_STATEMENT_SIZE;
+
+        }
+
+
+        size_t FULL_DATA_SIZE = (PROGRAM_SIZE - BYTECODE_SIZE);
+        FULL_DATA_SIZE += (FULL_DATA_SIZE) % QUAD_SIZE;
+
 
         // [SETUP MEMORY SPACE]
         {
 
-                // - ALIGN THE BYTECODE + DATA TO 8 BYTES -
-                BYTECODE_SIZE += (BYTECODE_SIZE % QUAD_SIZE != 0) * (QUAD_SIZE - (BYTECODE_SIZE % QUAD_SIZE));
 
-
-                JRM->MEMORY_SPACE_SIZE = BYTECODE_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
+                JRM->MEMORY_SPACE_SIZE = FULL_DATA_SIZE + (1024 * 1024 * (STACK_SIZE_MB + HEAP_SIZE_MB));
 
 
                 JRM->MEMORY_SPACE = malloc(JRM->MEMORY_SPACE_SIZE);
@@ -153,19 +254,6 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
 
 
                         return JSM_ERROR;
-
-                }
-
-        }
-
-
-        // [COPY CODE INTO MEMORY SPACE]
-        {
-
-                for (size_t INDEX = 0; INDEX < BYTECODE_SIZE; INDEX ++)
-                {
-
-                        JRM->MEMORY_SPACE[INDEX] = CODE[INDEX];
 
                 }
 
@@ -185,27 +273,19 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
         }
 
 
-        // [SET RDP & RDB]
+        // [COPY STATIC DATA]
         {
 
-                size_t INDEX;
+                for (size_t INDEX = BYTECODE_SIZE; INDEX < PROGRAM_SIZE; INDEX ++)
+                {
+
+                        JRM->MEMORY_SPACE[INDEX - BYTECODE_SIZE] = CODE[INDEX];
+
+                }
 
 
-                JRM->TOTAL_STATEMENT_COUNT = 0;
-
-
-                // - FIND END INSTRUCTION IN CODE -
-                for (INDEX = 0; JRM->MEMORY_SPACE[INDEX] != END; INDEX += BYTECODE_STATEMENT_SIZE);
-
-
-                INDEX += BYTECODE_STATEMENT_SIZE;
-
-
-                JRM->TOTAL_STATEMENT_COUNT = INDEX / BYTECODE_STATEMENT_SIZE;
-
-
-                JRM->REGISTER_LIST[RDP] = INDEX;
-                JRM->REGISTER_LIST[RDB] = INDEX;
+                JRM->REGISTER_LIST[RDP] = 0;
+                JRM->REGISTER_LIST[RDB] = 0;
 
         }
 
@@ -213,12 +293,12 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
         // [SET HEAP AND STACK REGISTERS]
         {
 
-                JRM->REGISTER_LIST[RHP] = BYTECODE_SIZE;
-                JRM->REGISTER_LIST[RHB] = BYTECODE_SIZE;
+                JRM->REGISTER_LIST[RHP] = FULL_DATA_SIZE;
+                JRM->REGISTER_LIST[RHB] = FULL_DATA_SIZE;
 
 
-                JRM->REGISTER_LIST[RSP] = BYTECODE_SIZE + (1024 * 1024 * HEAP_SIZE_MB);
-                JRM->REGISTER_LIST[RSB] = JRM->REGISTER_LIST[RSP];
+                JRM->REGISTER_LIST[RSB] = FULL_DATA_SIZE + (1024 * 1024 * HEAP_SIZE_MB);
+                JRM->REGISTER_LIST[RSP] = JRM->REGISTER_LIST[RSB];
 
 
                 JRM->START_PLUS_HEAP_SIZE = JRM->REGISTER_LIST[RSP];
@@ -271,8 +351,10 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
                 JRM->NOT_EXIT_REQUESTED = TRUE;
                 JRM->INCREMENT_STATMENT_INDEX = TRUE;
 
+
                 JRM->CODE_INDEX = 0;
-                JRM->JSM_CURRENT_SOC = 1;
+                JRM->JSM_CURRENT_SOC = 0;
+                JRM->TOTAL_STATEMENT_COUNT = BYTECODE_SIZE / BYTECODE_STATEMENT_SIZE;
 
         }
 
@@ -282,7 +364,7 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BYTECODE_SIZE, const size_
 }
 
 
-int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
+int JRM__RUN(char* restrict CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
         JRM_DATA JRM;
@@ -302,32 +384,14 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
         while (JRM.NOT_EXIT_REQUESTED)
         {
 
-                const unsigned long long INSTRUCTION = JRM.MEMORY_SPACE[JRM.CODE_INDEX];
-
-
-                #if !defined (UNFETTERED)
-
-                        if (INSTRUCTION >= INSTRUCTION_COUNT)
-                        {
-
-                                JRM.EXIT_CODE = 7;
-
-
-                                JSM__EXIT(&JRM);
-
-
-                                return JSM_ERROR;
-
-                        }
-
-                #endif
+                const unsigned long long INSTRUCTION = JRM.BYTECODE[JRM.CODE_INDEX];
 
 
                 // [WRITE BOTH OPERANDS]
                 {
 
-                        JRM.OPERAND_1 = *((const unsigned long long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 8));
-                        JRM.OPERAND_2 = *((const unsigned long long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 16));
+                        JRM.OPERAND_1 = *((const unsigned long long*)(JRM.BYTECODE + JRM.CODE_INDEX + 8));
+                        JRM.OPERAND_2 = *((const unsigned long long*)(JRM.BYTECODE + JRM.CODE_INDEX + 16));
 
                 }
 
@@ -545,26 +609,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (SET) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -575,26 +620,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (ADD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] += CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] += CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -605,26 +631,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (SUB) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] -= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] -= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -635,26 +642,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (MUL) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] *= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] *= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -665,26 +653,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (DIV) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] /= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] /= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -695,26 +664,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (MOD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] %= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
                                 break;
@@ -725,26 +675,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (INC) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] ++;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] ++;
 
 
                                 break;
@@ -755,26 +686,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (INCQ) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] += QUAD_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] += QUAD_SIZE;
 
 
                                 break;
@@ -785,26 +697,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (INCD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] += DOUBLE_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] += DOUBLE_SIZE;
 
 
                                 break;
@@ -815,26 +708,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (INCW) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] += WORD_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] += WORD_SIZE;
 
 
                                 break;
@@ -845,26 +719,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (DEC) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] --;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] --;
 
 
                                 break;
@@ -875,26 +730,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (DECQ) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] -= QUAD_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] -= QUAD_SIZE;
 
 
                                 break;
@@ -905,26 +741,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (DECD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] -= DOUBLE_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] -= DOUBLE_SIZE;
 
 
                                 break;
@@ -935,26 +752,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (DECW) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
-
-
-                                JRM.REGISTER_LIST[REGISTER] -= WORD_SIZE;
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] -= WORD_SIZE;
 
 
                                 break;
@@ -965,15 +763,28 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CMPE) :
                         {
 
-                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 != OPERAND_2));
+                                printf("CMPE | OP1 : %llu | OP2 %llu \n", CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1), CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
+
+                                if (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) == CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2))
+                                {
+
+                                        printf("TRUE \n");
+
+                                }
+                                else
+                                {
+
+                                        printf("FALSE \n");
+
+                                }
+
+
+                                unsigned long long INCREMENT = BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) != CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2)));
+                                JRM.CODE_INDEX += INCREMENT;
 
                                 break;
 
@@ -983,14 +794,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CMPH) :
                         {
 
-                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 <= OPERAND_2));
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) <= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2)));
 
 
                                 break;
@@ -1001,14 +808,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CMPL) :
                         {
 
-                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 >= OPERAND_2));
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) >= CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2)));
 
 
                                 break;
@@ -1019,14 +822,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CMPHE) :
                         {
 
-                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 < OPERAND_2));
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) < CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2)));
 
 
                                 break;
@@ -1037,14 +836,10 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (CMPLE) :
                         {
 
-                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-                                const unsigned long long OPERAND_2 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
                                 JRM.INCREMENT_STATMENT_INDEX = FALSE;
 
 
-                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 > OPERAND_2));
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) > CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2)));
 
 
                                 break;
@@ -1056,8 +851,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
 
 
                                 #if !defined (UNFETTERED)
@@ -1076,7 +869,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
@@ -1091,8 +884,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
 
 
                                 #if !defined (UNFETTERED)
@@ -1111,7 +902,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
@@ -1126,8 +917,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
 
 
                                 #if !defined (UNFETTERED)
@@ -1146,7 +935,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 JRM.REGISTER_LIST[RSP] += WORD_SIZE;
@@ -1161,8 +950,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 const unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
-
 
 
                                 #if !defined (UNFETTERED)
@@ -1182,7 +969,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                JRM.MEMORY_SPACE[CURRENT_RSP] = VALUE;
+                                JRM.MEMORY_SPACE[CURRENT_RSP] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 JRM.REGISTER_LIST[RSP] += BYTE_SIZE;
@@ -1197,22 +984,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
 
 
                                 #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
 
                                         if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < QUAD_SIZE)
                                         {
@@ -1231,7 +1005,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= QUAD_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
                                 JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
@@ -1246,21 +1020,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
 
 
                                 #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
 
 
                                         if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < DOUBLE_SIZE)
@@ -1280,7 +1042,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= DOUBLE_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
                                 JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
@@ -1295,21 +1057,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
 
 
                                 #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
 
 
                                         if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < WORD_SIZE)
@@ -1329,7 +1079,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= WORD_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
                                 JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
@@ -1344,22 +1094,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         {
 
                                 unsigned long long CURRENT_RSP = JRM.REGISTER_LIST[RSP];
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
 
 
                                 #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
 
                                         if (CURRENT_RSP >= JRM.MEMORY_SPACE_SIZE || CURRENT_RSP < BYTE_SIZE)
                                         {
@@ -1378,7 +1115,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= BYTE_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[CURRENT_RSP];
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = JRM.MEMORY_SPACE[CURRENT_RSP];
 
 
                                 JRM.REGISTER_LIST[RSP] -= BYTE_SIZE;
@@ -1392,24 +1129,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (LOADQ) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned long long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
@@ -1424,7 +1144,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned long long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
 
 
                                 break;
@@ -1435,24 +1155,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (LOADD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned long long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
@@ -1467,7 +1170,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
 
 
                                 break;
@@ -1478,24 +1181,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (LOADW) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned long long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
@@ -1510,7 +1196,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
 
 
                                 break;
@@ -1521,24 +1207,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (LOADB) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned long long LOAD_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
@@ -1553,7 +1222,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[LOAD_INDEX];
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = JRM.MEMORY_SPACE[LOAD_INDEX];
 
 
                                 break;
@@ -1564,7 +1233,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (WRITEQ) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
@@ -1580,7 +1248,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned long long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                *((unsigned long long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1591,7 +1259,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (WRITED) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
@@ -1607,7 +1274,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1618,7 +1285,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (WRITEW) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
@@ -1634,7 +1300,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1645,7 +1311,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (WRITEB) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
@@ -1661,7 +1326,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
+                                JRM.MEMORY_SPACE[WRITE_INDEX] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1672,24 +1337,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPLOADQ) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned long long* LOAD_ADDRESS = (const unsigned long long*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_ADDRESS == NULL)
@@ -1704,7 +1352,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+                                JRM.REGISTER_LIST[CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1)] = *LOAD_ADDRESS;
 
 
                                 break;
@@ -1715,24 +1363,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPLOADD) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned int* LOAD_ADDRESS = (const unsigned int*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_ADDRESS == NULL)
@@ -1747,7 +1378,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+                                JRM.REGISTER_LIST[CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1)] = *LOAD_ADDRESS;
 
 
                                 break;
@@ -1758,24 +1389,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPLOADW) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned short* LOAD_ADDRESS = (const unsigned short*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_ADDRESS == NULL)
@@ -1790,7 +1404,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+                                JRM.REGISTER_LIST[CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1)] = *LOAD_ADDRESS;
 
 
                                 break;
@@ -1801,24 +1415,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPLOADB) :
                         {
 
-                                const unsigned long long REGISTER = JRM.OPERAND_1;
                                 const unsigned char* LOAD_ADDRESS = (const unsigned char*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
-
-
-                                #if !defined (UNFETTERED)
-
-                                        if (REGISTER >= REGISTER_COUNT)
-                                        {
-
-                                                JRM.EXIT_CODE = 5;
-                                                JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                                break;
-
-                                        }
-
-                                #endif
 
 
                                 if (LOAD_ADDRESS == NULL)
@@ -1833,7 +1430,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *LOAD_ADDRESS;
+                                JRM.REGISTER_LIST[CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1)] = *LOAD_ADDRESS;
 
 
                                 break;
@@ -1844,7 +1441,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPWRITEQ) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 unsigned long long* WRITE_ADDRESS = (unsigned long long*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
 
@@ -1860,7 +1456,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *WRITE_ADDRESS = WRITE_VALUE;
+                                *WRITE_ADDRESS = (CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1));
 
 
                                 break;
@@ -1871,7 +1467,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPWRITED) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 unsigned int* WRITE_ADDRESS = (unsigned int*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
 
@@ -1887,7 +1482,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *WRITE_ADDRESS = (unsigned int)WRITE_VALUE;
+                                *WRITE_ADDRESS = (unsigned int)CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1898,7 +1493,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPWRITEW) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 unsigned short* WRITE_ADDRESS = (unsigned short*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
 
@@ -1914,7 +1508,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *WRITE_ADDRESS = (unsigned short)WRITE_VALUE;
+                                *WRITE_ADDRESS = (unsigned short)CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -1925,7 +1519,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         case (VPWRITEB) :
                         {
 
-                                const unsigned long long WRITE_VALUE = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
                                 unsigned char* WRITE_ADDRESS = (unsigned char*)(CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2));
 
 
@@ -1941,7 +1534,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *WRITE_ADDRESS = (unsigned char)WRITE_VALUE;
+                                *WRITE_ADDRESS = (unsigned char)CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
 
 
                                 break;
@@ -2173,14 +1766,14 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                 // [INCREMENT]
                 {
 
-                        JRM.CODE_INDEX += JRM.INCREMENT_STATMENT_INDEX * BYTECODE_STATEMENT_SIZE;
-
-
                         #if defined (DEBUG)
 
-                                JRM.JSM_CURRENT_SOC ++;
+                                JRM.JSM_CURRENT_SOC =  JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE;
 
                         #endif
+
+
+                        JRM.CODE_INDEX += JRM.INCREMENT_STATMENT_INDEX * BYTECODE_STATEMENT_SIZE;
 
 
                         JRM.INCREMENT_STATMENT_INDEX = TRUE;
@@ -2364,6 +1957,13 @@ void JSM__EXIT(JRM_DATA* JRM)
                 }
 
 
+                #if defined (DEBUG)
+
+                        printf(" | STATEMENT : %llu", JRM->JSM_CURRENT_SOC);
+
+                #endif
+
+
                 printf("\n");
 
         }
@@ -2374,7 +1974,7 @@ void JSM__EXIT(JRM_DATA* JRM)
 void JRM_LOG_ERROR(JRM_DATA* JRM, const char* MESSAGE)
 {
 
-        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %lu | %s\n", JRM->JSM_CURRENT_SOC, MESSAGE);
+        fprintf(stderr, "\033[1;31m[JRM ERROR]\033[0m : STATEMENT : %llu | %s\n", JRM->JSM_CURRENT_SOC, MESSAGE);
 
 }
 

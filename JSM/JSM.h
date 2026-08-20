@@ -99,6 +99,15 @@ enum REGISTERS_ENUM
         RG7,
         RG8,
         RG9,
+        RA1,
+        RA2,
+        RA3,
+        RA4,
+        RA5,
+        RA6,
+        RA7,
+        RA8,
+        RA9,
         RJM,
         RJR,
         RJ1,
@@ -139,7 +148,7 @@ int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t*
 int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE);
 
 
-int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
+int JRM__RUN(char* __restrict CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
 
 #endif
