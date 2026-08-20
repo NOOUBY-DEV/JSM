@@ -7,6 +7,7 @@
         #include <stddef.h>
         #include <stdio.h>
         #include <stdlib.h>
+        #include <string.h>
 
 
         #if defined(__linux__)
@@ -86,6 +87,16 @@
 #define DOUBLE_SIZE sizeof(unsigned int)
 #define WORD_SIZE sizeof(unsigned short)
 #define BYTE_SIZE sizeof(unsigned char)
+
+
+// unaligned, aliasing-safe access into MEMORY_SPACE (char buffer, arbitrary runtime index)
+static inline unsigned long long READQ(const char* BASE, size_t INDEX) { unsigned long long V; memcpy(&V, BASE + INDEX, sizeof(V)); return V; }
+static inline unsigned int READD(const char* BASE, size_t INDEX) { unsigned int V; memcpy(&V, BASE + INDEX, sizeof(V)); return V; }
+static inline unsigned short READW(const char* BASE, size_t INDEX) { unsigned short V; memcpy(&V, BASE + INDEX, sizeof(V)); return V; }
+
+static inline void WRITEQV(char* BASE, size_t INDEX, unsigned long long V) { memcpy(BASE + INDEX, &V, sizeof(V)); }
+static inline void WRITEDV(char* BASE, size_t INDEX, unsigned int V) { memcpy(BASE + INDEX, &V, sizeof(V)); }
+static inline void WRITEWV(char* BASE, size_t INDEX, unsigned short V) { memcpy(BASE + INDEX, &V, sizeof(V)); }
 
 
 
@@ -326,8 +337,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                 // [WRITE BOTH OPERANDS]
                 {
 
-                        JRM.OPERAND_1 = *((const unsigned long long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 8));
-                        JRM.OPERAND_2 = *((const unsigned long long*)(JRM.MEMORY_SPACE + JRM.CODE_INDEX + 16));
+                        JRM.OPERAND_1 = READQ(JRM.MEMORY_SPACE, JRM.CODE_INDEX + 8);
+                        JRM.OPERAND_2 = READQ(JRM.MEMORY_SPACE, JRM.CODE_INDEX + 16);
 
                 }
 
@@ -369,7 +380,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                const unsigned long long STATEMENT_INDEX = *( (unsigned long long*) (JRM.MEMORY_SPACE + CURRENT_RSB - QUAD_SIZE) );
+                                const unsigned long long STATEMENT_INDEX = READQ(JRM.MEMORY_SPACE, CURRENT_RSB - QUAD_SIZE);
 
 
                                 #if !defined (UNFETTERED)
@@ -388,7 +399,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                const unsigned long long OLD_RSB = *( (unsigned long long*) (JRM.MEMORY_SPACE + CURRENT_RSB - (QUAD_SIZE * 2)) );
+                                const unsigned long long OLD_RSB = READQ(JRM.MEMORY_SPACE, CURRENT_RSB - (QUAD_SIZE * 2));
 
 
                                 #if !defined (UNFETTERED)
@@ -512,11 +523,8 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 // [AUTO PUSH DATA]
                                 {
 
-                                        unsigned long long* QUAD__MEMORY_SPACE__AT_RSP = (unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP);
-
-
-                                        QUAD__MEMORY_SPACE__AT_RSP[0] = CURRENT_RSB;  // - PUSHQ RSB; -
-                                        QUAD__MEMORY_SPACE__AT_RSP[1] = (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 1;  // - PUSHQ <RETURN STATEMENT> -
+                                        WRITEQV(JRM.MEMORY_SPACE, CURRENT_RSP, CURRENT_RSB);  // - PUSHQ RSB; -
+                                        WRITEQV(JRM.MEMORY_SPACE, CURRENT_RSP + QUAD_SIZE, (JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE) + 1);  // - PUSHQ <RETURN STATEMENT> -
 
 
                                         JRM.REGISTER_LIST[RSP] += QUAD_SIZE * 2;  // - AUTO ADD RSP BY 16 -
@@ -1076,7 +1084,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                WRITEQV(JRM.MEMORY_SPACE, CURRENT_RSP, VALUE);
 
 
                                 JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
@@ -1111,7 +1119,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                WRITEDV(JRM.MEMORY_SPACE, CURRENT_RSP, VALUE);
 
 
                                 JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
@@ -1146,7 +1154,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 #endif
 
 
-                                *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP)) = VALUE;
+                                WRITEWV(JRM.MEMORY_SPACE, CURRENT_RSP, VALUE);
 
 
                                 JRM.REGISTER_LIST[RSP] += WORD_SIZE;
@@ -1231,7 +1239,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= QUAD_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[REGISTER] = READQ(JRM.MEMORY_SPACE, CURRENT_RSP);
 
 
                                 JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
@@ -1280,7 +1288,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= DOUBLE_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[REGISTER] = READD(JRM.MEMORY_SPACE, CURRENT_RSP);
 
 
                                 JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
@@ -1329,7 +1337,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= WORD_SIZE;
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
+                                JRM.REGISTER_LIST[REGISTER] = READW(JRM.MEMORY_SPACE, CURRENT_RSP);
 
 
                                 JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
@@ -1424,7 +1432,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[REGISTER] = READQ(JRM.MEMORY_SPACE, LOAD_INDEX);
 
 
                                 break;
@@ -1467,7 +1475,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[REGISTER] = READD(JRM.MEMORY_SPACE, LOAD_INDEX);
 
 
                                 break;
@@ -1510,7 +1518,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
+                                JRM.REGISTER_LIST[REGISTER] = READW(JRM.MEMORY_SPACE, LOAD_INDEX);
 
 
                                 break;
@@ -1580,7 +1588,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned long long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                WRITEQV(JRM.MEMORY_SPACE, WRITE_INDEX, WRITE_VALUE);
 
 
                                 break;
@@ -1607,7 +1615,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                WRITEDV(JRM.MEMORY_SPACE, WRITE_INDEX, WRITE_VALUE);
 
 
                                 break;
@@ -1634,7 +1642,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 }
 
 
-                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                WRITEWV(JRM.MEMORY_SPACE, WRITE_INDEX, WRITE_VALUE);
 
 
                                 break;
