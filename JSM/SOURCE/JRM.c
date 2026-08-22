@@ -1,8 +1,6 @@
 #include "../JSM.h"
 
 
-#define DEBUG
-
 // [INCLUDES]
 //
 
