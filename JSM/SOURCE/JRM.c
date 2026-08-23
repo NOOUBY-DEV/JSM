@@ -93,6 +93,9 @@
 #define BYTE_SIZE sizeof(unsigned char)
 
 
+#define RESET_REGISTER(REGISTER) JRM.REGISTER_LIST[REGISTER] = 0
+
+
 
 typedef struct JRM_DATA
 {
@@ -1351,6 +1354,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         if (DOUBLE_NOT_ALIGNED(CURRENT_RSP))
                                         {
 
+                                                RESET_REGISTER(REGISTER);
+
+
                                                 MEM_COPY(JRM.MEMORY_SPACE + CURRENT_RSP, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
 
 
@@ -1417,6 +1423,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         if (WORD_NOT_ALIGNED(CURRENT_RSP))
                                         {
+
+                                                RESET_REGISTER(REGISTER);
+
 
                                                 MEM_COPY(JRM.MEMORY_SPACE + CURRENT_RSP, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
 
@@ -1581,6 +1590,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         if (DOUBLE_NOT_ALIGNED(LOAD_INDEX))
                                         {
 
+                                                RESET_REGISTER(REGISTER);
+
+
                                                 MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
 
 
@@ -1634,6 +1646,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         if (WORD_NOT_ALIGNED(LOAD_INDEX))
                                         {
+
+                                                RESET_REGISTER(REGISTER);
+
 
                                                 MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
 
@@ -1943,6 +1958,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                         if (DOUBLE_NOT_ALIGNED(LOAD_INDEX))
                                         {
 
+                                                RESET_REGISTER(REGISTER);
+
+
                                                 MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
 
 
@@ -1996,6 +2014,9 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         if (WORD_NOT_ALIGNED(LOAD_INDEX))
                                         {
+
+                                                RESET_REGISTER(REGISTER);
+
 
                                                 MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
 
