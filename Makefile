@@ -1,5 +1,5 @@
 C_FLAGS = -I./JSM
-GCC_FLAGS = -g -O2
+GCC_FLAGS = -g -O3
 # -DUNFETTERED
 #-Ofast
 
