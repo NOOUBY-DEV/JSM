@@ -82,6 +82,11 @@
 #define CHAR_PTR_CAST(VALUE) ((char*)&VALUE)
 
 
+#define QUAD_NOT_ALIGNED(INDEX) (INDEX & 7)
+#define DOUBLE_NOT_ALIGNED(INDEX) (INDEX & 3)
+#define WORD_NOT_ALIGNED(INDEX) (INDEX & 1)
+
+
 #define QUAD_SIZE sizeof(unsigned long long)
 #define DOUBLE_SIZE sizeof(unsigned int)
 #define WORD_SIZE sizeof(unsigned short)
@@ -94,7 +99,7 @@ typedef struct JRM_DATA
 
         unsigned long long REGISTER_LIST[REGISTER_COUNT];
 
-        char* restrict MEMORY_SPACE;
+        unsigned char* restrict MEMORY_SPACE;
 
         size_t CODE_INDEX;
 
@@ -126,7 +131,9 @@ void JSM__EXIT(JRM_DATA* JRM);
 
 static inline unsigned char PRESSED_KEY();
 
-void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH);
+void INPUT_TO_BUFFER(unsigned char* BUFFER, const size_t MAX_LENGTH);
+
+static inline void MEM_COPY(const void* restrict SOURCE, void* restrict DESTINATION, size_t LENGTH);
 
 
 
@@ -1051,7 +1058,6 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                         }
 
-
                         case (PUSHQ) :
                         {
 
@@ -1067,6 +1073,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                                 JRM.EXIT_CODE = 11;
                                                 JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (QUAD_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(&VALUE, JRM.MEMORY_SPACE + CURRENT_RSP, QUAD_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] += QUAD_SIZE;
 
 
                                                 break;
@@ -1108,6 +1128,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (DOUBLE_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(&VALUE, JRM.MEMORY_SPACE + CURRENT_RSP, DOUBLE_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] += DOUBLE_SIZE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
 
 
@@ -1137,6 +1171,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                                 JRM.EXIT_CODE = 11;
                                                 JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (WORD_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(&VALUE, JRM.MEMORY_SPACE + CURRENT_RSP, WORD_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] += WORD_SIZE;
 
 
                                                 break;
@@ -1231,6 +1279,24 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= QUAD_SIZE;
 
 
+                                #if !defined (UNFETTERED)
+
+                                        if (QUAD_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + CURRENT_RSP, JRM.REGISTER_LIST + REGISTER, QUAD_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] -= QUAD_SIZE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
@@ -1280,6 +1346,24 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 CURRENT_RSP -= DOUBLE_SIZE;
 
 
+                                #if !defined (UNFETTERED)
+
+                                        if (DOUBLE_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + CURRENT_RSP, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] -= DOUBLE_SIZE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + CURRENT_RSP));
 
 
@@ -1327,6 +1411,24 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 CURRENT_RSP -= WORD_SIZE;
+
+
+                                #if !defined (UNFETTERED)
+
+                                        if (WORD_NOT_ALIGNED(CURRENT_RSP))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + CURRENT_RSP, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
+
+
+                                                JRM.REGISTER_LIST[RSP] -= WORD_SIZE;
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + CURRENT_RSP));
@@ -1409,19 +1511,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (QUAD_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, QUAD_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1452,19 +1565,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (DOUBLE_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1495,19 +1619,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (WORD_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1538,19 +1673,19 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = JRM.MEMORY_SPACE[LOAD_INDEX];
@@ -1568,16 +1703,31 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+
+                                        if (QUAD_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, QUAD_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 *((unsigned long long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
@@ -1595,16 +1745,31 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+
+                                        if (DOUBLE_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, DOUBLE_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
@@ -1622,16 +1787,31 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+
+                                        if (WORD_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, WORD_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
@@ -1649,16 +1829,20 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - BYTE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+                                #endif
 
 
                                 JRM.MEMORY_SPACE[WRITE_INDEX] = WRITE_VALUE;
@@ -1689,19 +1873,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (QUAD_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, QUAD_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned long long*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1732,19 +1927,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (DOUBLE_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, DOUBLE_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned int*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1775,19 +1981,30 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                                         }
 
+
+                                        if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                                break;
+
+                                        }
+
+
+                                        if (WORD_NOT_ALIGNED(LOAD_INDEX))
+                                        {
+
+                                                MEM_COPY(JRM.MEMORY_SPACE + LOAD_INDEX, JRM.REGISTER_LIST + REGISTER, WORD_SIZE);
+
+
+                                                break;
+
+                                        }
+
                                 #endif
-
-
-                                if (LOAD_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
-                                {
-
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
-
-
-                                        break;
-
-                                }
 
 
                                 JRM.REGISTER_LIST[REGISTER] = *((unsigned short*)(JRM.MEMORY_SPACE + LOAD_INDEX));
@@ -1848,16 +2065,31 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = JRM.REGISTER_LIST[RSB] + CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - QUAD_SIZE)
+                                        {
+
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                        break;
+                                                break;
 
-                                }
+                                        }
+
+
+                                        if (QUAD_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, QUAD_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
 
 
                                 *((unsigned long long*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
@@ -1875,19 +2107,34 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = JRM.REGISTER_LIST[RSB] + CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - DOUBLE_SIZE)
+                                        {
 
-
-                                        break;
-
-                                }
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                                break;
+
+                                        }
+
+
+                                        if (DOUBLE_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, DOUBLE_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                *((unsigned int*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = (unsigned int)WRITE_VALUE;
 
 
                                 break;
@@ -1902,19 +2149,34 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                                 const unsigned long long WRITE_INDEX = JRM.REGISTER_LIST[RSB] + CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
 
 
-                                if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
-                                {
+                                #if !defined (UNFETTERED)
 
-                                        JRM.EXIT_CODE = 11;
-                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+                                        if (WRITE_INDEX > JRM.MEMORY_SPACE_SIZE - WORD_SIZE)
+                                        {
 
-
-                                        break;
-
-                                }
+                                                JRM.EXIT_CODE = 11;
+                                                JRM.NOT_EXIT_REQUESTED = FALSE;
 
 
-                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = WRITE_VALUE;
+                                                break;
+
+                                        }
+
+
+                                        if (WORD_NOT_ALIGNED(WRITE_INDEX))
+                                        {
+
+                                                MEM_COPY(&WRITE_VALUE, JRM.MEMORY_SPACE + WRITE_INDEX, WORD_SIZE);
+
+
+                                                break;
+
+                                        }
+
+                                #endif
+
+
+                                *((unsigned short*)(JRM.MEMORY_SPACE + WRITE_INDEX)) = (unsigned short)WRITE_VALUE;
 
 
                                 break;
@@ -2478,7 +2740,24 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 }
 
 
-void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH)
+static inline void MEM_COPY(const void* restrict SOURCE, void* restrict DESTINATION, size_t LENGTH)
+{
+
+        unsigned char* restrict CASTED_DESTINATION = DESTINATION;
+        const unsigned char* restrict CASTED_SOURCE = SOURCE;
+
+
+        while (LENGTH --)
+        {
+
+                *CASTED_DESTINATION ++ = *CASTED_SOURCE ++;
+
+        }
+
+}
+
+
+void INPUT_TO_BUFFER(unsigned char* BUFFER, const size_t MAX_LENGTH)
 {
 
         size_t INDEX = 0;
@@ -2493,7 +2772,7 @@ void INPUT_TO_BUFFER(char* BUFFER, const size_t MAX_LENGTH)
         while (TRUE)
         {
 
-                char KEY = PRESSED_KEY();
+                unsigned char KEY = PRESSED_KEY();
 
 
 
