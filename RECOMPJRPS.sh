@@ -10,7 +10,7 @@ for file in TEST/*.jsm; do
         BASE_NAME=$(basename "$file" .jsm)
 
 
-        ./OUTPUT/JSMC "$file" "COMPILED_JRPS/${BASE_NAME}.jrp"
+        ./OUTPUT/JSMC "$file" "JRPS/${BASE_NAME}.jrp"
 
 
         # [IF COMPILE STATUS IS 0]
