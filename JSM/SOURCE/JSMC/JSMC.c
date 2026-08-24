@@ -1,6 +1,4 @@
-#include "../JSM.h"
-#include <stddef.h>
-#include <stdio.h>
+#include "JSMC.h"
 
 
 

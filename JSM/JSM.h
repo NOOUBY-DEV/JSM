@@ -2,11 +2,6 @@
 #ifdef JSM
 
 
-
-#include <stdio.h>
-#include <stdlib.h>
-
-
 #define BYTECODE_STATEMENT_SIZE 24
 
 
@@ -144,19 +139,6 @@ enum REGISTERS_ENUM
 
 #define OPERAND_1_TYPE_INDEX 0
 #define OPERAND_2_TYPE_INDEX 1
-
-
-
-int JSM__READ_FILE_TO_JSMCODE(const char* FILE_PATH, size_t* JSMCODE_LENGTH, char** JSMCODE);
-
-
-int JSM__CHECK_BYTECODE_SIZE(char* JSMCODE, const size_t JSMCODE_LENGTH, size_t* BYTECODE_SIZE);
-
-
-int JSM__COMPILE_TO_BYTECODE(const long IS_COMPILE_MODE, char* JSMCODE, char* BYTECODE, const size_t JSMCODE_SIZE, size_t* BYTECODE_SIZE);
-
-
-int JRM__RUN(const char* CODE, const size_t BYTECODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB);
 
 
 #endif
