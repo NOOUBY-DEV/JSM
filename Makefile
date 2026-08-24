@@ -1,5 +1,5 @@
 C_FLAGS = -I./JSM
-GCC_FLAGS = -g -O3
+GCC_FLAGS = -g -O3 -fno-strict-aliasing
 # -DUNFETTERED
 #-Ofast
 
