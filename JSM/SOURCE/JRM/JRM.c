@@ -642,7 +642,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         }
 
 
-                        case (SETLOOP) :
+                        case (SETPOINT) :
                         {
 
                                 JRM.REGISTER_LIST[RLI] = (JRM.CODE_INDEX + BYTECODE_STATEMENT_SIZE) / BYTECODE_STATEMENT_SIZE;
@@ -653,7 +653,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         }
 
 
-                        case (RERUN) :
+                        case (JUMPPOINT) :
                         {
 
                                 unsigned long long JUMP_INDEX = JRM.REGISTER_LIST[RLI];
@@ -678,6 +678,7 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 break;
+
 
                         }
 
