@@ -330,7 +330,7 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t 
                 JRM->INCREMENT_STATMENT_INDEX = TRUE;
 
                 JRM->CODE_INDEX = 0;
-                JRM->JSM_CURRENT_SOC = 1;
+                JRM->JSM_CURRENT_SOC = 0;
 
         }
 
@@ -636,6 +636,46 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
                         case (SKIP) :
                         {
+
+                                break;
+
+                        }
+
+
+                        case (SETLOOP) :
+                        {
+
+                                JRM.REGISTER_LIST[RLI] = (JRM.CODE_INDEX + BYTECODE_STATEMENT_SIZE) / BYTECODE_STATEMENT_SIZE;
+
+
+                                break;
+
+                        }
+
+
+                        case (RERUN) :
+                        {
+
+                                unsigned long long JUMP_INDEX = JRM.REGISTER_LIST[RLI];
+
+
+                                if (JUMP_INDEX >= JRM.TOTAL_STATEMENT_COUNT)
+                                {
+
+                                        JRM.EXIT_CODE = 4;
+                                        JRM.NOT_EXIT_REQUESTED = FALSE;
+
+
+                                        break;
+
+                                }
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX = JUMP_INDEX * BYTECODE_STATEMENT_SIZE;
+
 
                                 break;
 

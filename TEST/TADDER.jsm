@@ -9,11 +9,12 @@ PUSHQ    10;
 PUSHQ    0;
 
 
+SETLOOP;
 RLOADQ   RG1 0;
 CMPE     RG1 100000000;
 
 
-JUMP     20;
+JUMP     21;
 
 
 RLOADQ   RG1 8;
@@ -22,7 +23,7 @@ RLOADQ   RG1 16;
 SET      RA2 RG1;
 RLOADQ   RG1 24;
 SET      RA3 RG1;
-CALL     22;
+CALL     23;
 RWRITEQ  RRV 32;
 
 
@@ -31,7 +32,7 @@ INC      RG1;
 RWRITEQ  RG1 0;
 
 
-JUMP 5;
+RERUN;
 
 
 RLOADQ   RG1 32;
