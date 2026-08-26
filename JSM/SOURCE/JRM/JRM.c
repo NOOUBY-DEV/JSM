@@ -58,6 +58,10 @@
 #define BYTE_SIZE sizeof(unsigned char)
 
 
+#define OPTYPES__REG_ANY 0x0001
+#define OPTYPES__ANY_ANY 0x0000
+
+
 #define RESET_REGISTER(REGISTER) JRM.REGISTER_LIST[REGISTER] = 0
 
 
@@ -71,6 +75,16 @@ typedef union VALUE
 
 }
 VALUE;
+
+
+typedef union OPERAND_TYPES
+{
+
+        unsigned short AS_WORD;
+        unsigned char BYTES[2];
+
+}
+OPERAND_TYPES;
 
 
 #define CAST_TO_VALUE_PTR(POINTER) ((union VALUE*)(POINTER))
@@ -124,6 +138,40 @@ static inline void MEM_COPY(const void* restrict SOURCE, void* restrict DESTINAT
 
 
 
+static inline unsigned short GET_INSTRUCTION_EXPECTED_QUAD(const unsigned char INSTRUCTION)
+{
+
+        switch (INSTRUCTION)
+        {
+
+                case (ADD)     : return OPTYPES__REG_ANY;
+                case (SUB)     : return OPTYPES__REG_ANY;
+                case (MUL)     : return OPTYPES__REG_ANY;
+                case (DIV)     : return OPTYPES__REG_ANY;
+                case (MOD)     : return OPTYPES__REG_ANY;
+                case (INC)     : return OPTYPES__REG_ANY;
+                case (INCQ)    : return OPTYPES__REG_ANY;
+                case (INCD)    : return OPTYPES__REG_ANY;
+                case (INCW)    : return OPTYPES__REG_ANY;
+                case (LOADQ)   : return OPTYPES__REG_ANY;
+                case (LOADD)   : return OPTYPES__REG_ANY;
+                case (LOADW)   : return OPTYPES__REG_ANY;
+                case (LOADB)   : return OPTYPES__REG_ANY;
+                case (RLOADQ)  : return OPTYPES__REG_ANY;
+                case (RLOADD)  : return OPTYPES__REG_ANY;
+                case (RLOADW)  : return OPTYPES__REG_ANY;
+                case (RLOADB)  : return OPTYPES__REG_ANY;
+                case (VPLOADQ) : return OPTYPES__REG_ANY;
+                case (VPLOADD) : return OPTYPES__REG_ANY;
+                case (VPLOADW) : return OPTYPES__REG_ANY;
+                case (VPLOADB) : return OPTYPES__REG_ANY;
+                default        : return OPTYPES__ANY_ANY;
+
+        }
+
+}
+
+
 int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
 {
 
@@ -160,6 +208,32 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t 
 
 
                                 return JSM_ERROR;
+
+                        }
+
+
+                        // [CHECK TYPES]
+                        {
+
+                                OPERAND_TYPES CURRENT_TYPES;
+
+
+                                CURRENT_TYPES.AS_WORD = GET_INSTRUCTION_EXPECTED_QUAD(CODE[BYTECODE_SIZE]);
+
+
+                                if
+                                (
+                                (CURRENT_TYPES.BYTES[0] > CODE[BYTECODE_SIZE + 1]) ||
+                                (CURRENT_TYPES.BYTES[1] > CODE[BYTECODE_SIZE + 2])
+                                )
+                                {
+
+                                        LOG_PRELOAD_ERROR("PROGRAM BINARY IS INVALID");
+
+
+                                        return JSM_ERROR;
+
+                                }
 
                         }
 
