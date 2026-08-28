@@ -138,7 +138,7 @@ static inline void MEM_COPY(const void* restrict SOURCE, void* restrict DESTINAT
 
 
 
-static inline unsigned short GET_INSTRUCTION_EXPECTED_QUAD(const unsigned char INSTRUCTION)
+static inline unsigned short GET_INSTRUCTION_EXPECTED_WORD(const unsigned char INSTRUCTION)
 {
 
         switch (INSTRUCTION)
@@ -149,6 +149,10 @@ static inline unsigned short GET_INSTRUCTION_EXPECTED_QUAD(const unsigned char I
                 case (MUL)     : return OPTYPES__REG_ANY;
                 case (DIV)     : return OPTYPES__REG_ANY;
                 case (MOD)     : return OPTYPES__REG_ANY;
+                case (AND)     : return OPTYPES__REG_ANY;
+                case (OR)      : return OPTYPES__REG_ANY;
+                case (XOR)     : return OPTYPES__REG_ANY;
+                case (SHL)     : return OPTYPES__REG_ANY;
                 case (INC)     : return OPTYPES__REG_ANY;
                 case (INCQ)    : return OPTYPES__REG_ANY;
                 case (INCD)    : return OPTYPES__REG_ANY;
@@ -200,7 +204,7 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t 
                         OPERAND_TYPES CURRENT_TYPES;
 
 
-                        CURRENT_TYPES.AS_WORD = GET_INSTRUCTION_EXPECTED_QUAD(CODE[BYTECODE_SIZE]);
+                        CURRENT_TYPES.AS_WORD = GET_INSTRUCTION_EXPECTED_WORD(CODE[BYTECODE_SIZE]);
 
 
                         if
@@ -805,6 +809,72 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         }
 
 
+                        case (AND) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) & CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (NOT) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = ~ CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                break;
+
+                        }
+
+
+                        case (OR) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) | CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (XOR) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) ^ CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (SHL) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) << CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
+                        case (SHR) :
+                        {
+
+                                JRM.REGISTER_LIST[JRM.OPERAND_1] = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1) >> CAST_OPERAND_TO_TYPE(JRM.OPERAND_2, 2);
+
+
+                                break;
+
+                        }
+
+
                         case (INC) :
                         {
 
@@ -976,6 +1046,23 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
 
 
                                 JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (OPERAND_1 > OPERAND_2));
+
+
+                                break;
+
+                        }
+
+
+                        case (CMPTR) :
+                        {
+
+                                const unsigned long long OPERAND_1 = CAST_OPERAND_TO_TYPE(JRM.OPERAND_1, 1);
+
+
+                                JRM.INCREMENT_STATMENT_INDEX = FALSE;
+
+
+                                JRM.CODE_INDEX += BYTECODE_STATEMENT_SIZE + (BYTECODE_STATEMENT_SIZE * (!OPERAND_1));
 
 
                                 break;
