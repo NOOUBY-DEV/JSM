@@ -197,10 +197,18 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t 
                 for (; CODE[BYTECODE_SIZE] != END && BYTECODE_SIZE <= BINARY_SIZE; BYTECODE_SIZE += BYTECODE_STATEMENT_SIZE)
                 {
 
+                        OPERAND_TYPES CURRENT_TYPES;
+
+
+                        CURRENT_TYPES.AS_WORD = GET_INSTRUCTION_EXPECTED_QUAD(CODE[BYTECODE_SIZE]);
+
+
                         if
                         (
                         (CODE[BYTECODE_SIZE + 1] && CAST_TO_VALUE_PTR(CODE + BYTECODE_SIZE + 8 )->AS_QUAD >= REGISTER_COUNT) ||
-                        (CODE[BYTECODE_SIZE + 2] && CAST_TO_VALUE_PTR(CODE + BYTECODE_SIZE + 16)->AS_QUAD >= REGISTER_COUNT)
+                        (CODE[BYTECODE_SIZE + 2] && CAST_TO_VALUE_PTR(CODE + BYTECODE_SIZE + 16)->AS_QUAD >= REGISTER_COUNT) ||
+                        (CURRENT_TYPES.BYTES[0] > CODE[BYTECODE_SIZE + 1]) ||
+                        (CURRENT_TYPES.BYTES[1] > CODE[BYTECODE_SIZE + 2])
                         )
                         {
 
@@ -208,32 +216,6 @@ int JRM__INIT(JRM_DATA* JRM, const char* CODE, size_t BINARY_SIZE, const size_t 
 
 
                                 return JSM_ERROR;
-
-                        }
-
-
-                        // [CHECK TYPES]
-                        {
-
-                                OPERAND_TYPES CURRENT_TYPES;
-
-
-                                CURRENT_TYPES.AS_WORD = GET_INSTRUCTION_EXPECTED_QUAD(CODE[BYTECODE_SIZE]);
-
-
-                                if
-                                (
-                                (CURRENT_TYPES.BYTES[0] > CODE[BYTECODE_SIZE + 1]) ||
-                                (CURRENT_TYPES.BYTES[1] > CODE[BYTECODE_SIZE + 2])
-                                )
-                                {
-
-                                        LOG_PRELOAD_ERROR("PROGRAM BINARY IS INVALID");
-
-
-                                        return JSM_ERROR;
-
-                                }
 
                         }
 
