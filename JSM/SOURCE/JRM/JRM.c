@@ -1,9 +1,6 @@
 #include "JRM.h"
 
 
-#define VISUALIZE
-
-
 // [INCLUDES]
 //
 
