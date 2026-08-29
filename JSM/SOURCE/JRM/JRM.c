@@ -1,6 +1,9 @@
 #include "JRM.h"
 
 
+#define VISUALIZE
+
+
 // [INCLUDES]
 //
 
@@ -458,6 +461,97 @@ int CHECK__SIZES()
         return JSM_OK;
 
 }
+
+
+#ifdef VISUALIZE
+
+static inline void VISUALIZE_STATE(JRM_DATA* JRM)
+{
+
+        enum MODE_ENUM
+        {
+
+                WRITE,
+                READ,
+
+        };
+
+
+        system("clear");
+
+
+        const unsigned long long CONTENT_FULL_LENGTH = 50;
+
+
+        printf("╭────────────────────┬────┬────────────────────────╮ \n");
+
+
+        for (long long ROW_COUNT = 16; ROW_COUNT >= 0; ROW_COUNT --)
+        {
+
+                unsigned long OFFSET = JRM->REGISTER_LIST[RSB] + ROW_COUNT;
+
+
+                // [PRINT CONTENT]
+                {
+
+                        printf("│ 0x%016lx | %02x | ", OFFSET, JRM->MEMORY_SPACE[OFFSET]);
+
+
+                        unsigned long long CURRENT_CONTENT_LENGTH = 27;
+
+
+                        if (OFFSET == JRM->REGISTER_LIST[RSB])
+                        {
+
+                                CURRENT_CONTENT_LENGTH += 11;
+
+
+                                printf("<-- [ RSB ]");
+
+                        }
+                        else if (OFFSET == JRM->REGISTER_LIST[RSP])
+                        {
+
+                                CURRENT_CONTENT_LENGTH += 11;
+
+
+                                printf("<-- [ RSP ]");
+
+                        }
+
+
+                        for (unsigned long long PRINT_SPACE_COUNT = 0; PRINT_SPACE_COUNT < CONTENT_FULL_LENGTH - CURRENT_CONTENT_LENGTH; PRINT_SPACE_COUNT ++)
+                        {
+
+                                printf(" ");
+
+                        }
+
+
+                        printf("|\n");
+
+
+                        if (ROW_COUNT != 0)
+                        {
+
+                                printf("├────────────────────┼────┼────────────────────────┤ \n");
+
+                        }
+
+                }
+
+        }
+
+
+        printf("╰────────────────────┴────┴────────────────────────╯ \n");
+
+
+        usleep(0.1 * 1000000);
+
+}
+
+#endif
 
 
 int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_MB, const size_t HEAP_SIZE_MB)
@@ -2541,6 +2635,13 @@ int JRM__RUN(const char* CODE, const size_t CODE_SIZE, const size_t STACK_SIZE_M
                         #if defined (DEBUG)
 
                                 JRM.JSM_CURRENT_SOC = JRM.CODE_INDEX / BYTECODE_STATEMENT_SIZE;
+
+                        #endif
+
+
+                        #ifdef VISUALIZE
+
+                                VISUALIZE_STATE(&JRM);
 
                         #endif
 
