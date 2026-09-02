@@ -1,5 +1,5 @@
 C_FLAGS = -I./JSM
-GCC_FLAGS = -g -O3 -march=native
+GCC_FLAGS = -g -O3 -march=native -falign-labels=32
 #-Wstrict-aliasing=1 -flto -fstrict-aliasing
 #-fno-strict-aliasing
 # -DUNFETTERED
